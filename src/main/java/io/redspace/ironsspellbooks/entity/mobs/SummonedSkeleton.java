@@ -6,10 +6,8 @@ import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.capabilities.magic.SummonManager;
 import io.redspace.ironsspellbooks.entity.mobs.goals.*;
 import io.redspace.ironsspellbooks.registries.EntityRegistry;
-import io.redspace.ironsspellbooks.util.OwnerHelper;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -39,7 +37,6 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
-import java.util.UUID;
 
 public class SummonedSkeleton extends Skeleton implements IMagicSummon, GeoAnimatable {
     private static final EntityDataAccessor<Boolean> DATA_IS_ANIMATING_RISE = SynchedEntityData.defineId(SummonedSkeleton.class, EntityDataSerializers.BOOLEAN);
@@ -55,10 +52,15 @@ public class SummonedSkeleton extends Skeleton implements IMagicSummon, GeoAnima
      */
     @Deprecated(forRemoval = true)
     public SummonedSkeleton(Level level, LivingEntity owner, boolean playRiseAnimation) {
-        this(EntityRegistry.SUMMONED_SKELETON.get(), level);
+        this(level, playRiseAnimation);
         setSummoner(owner);
-        if (playRiseAnimation)
+    }
+
+    public SummonedSkeleton(Level level, boolean playRiseAnimation) {
+        this(EntityRegistry.SUMMONED_SKELETON.get(), level);
+        if (playRiseAnimation) {
             triggerRiseAnimation();
+        }
     }
 
     private int riseAnimTime = 80;

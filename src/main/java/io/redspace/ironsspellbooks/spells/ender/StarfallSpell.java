@@ -7,6 +7,7 @@ import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.*;
 import io.redspace.ironsspellbooks.api.util.AnimationHolder;
+import io.redspace.ironsspellbooks.api.util.RaycastBuilder;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.damage.DamageSources;
@@ -33,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@AutoSpellConfig
 public class StarfallSpell extends AbstractSpell {
     private final ResourceLocation spellId = ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "starfall");
 
@@ -89,7 +89,11 @@ public class StarfallSpell extends AbstractSpell {
     @Override
     public void onCast(Level world, int spellLevel, LivingEntity entity, CastSource castSource, MagicData playerMagicData) {
         if (!(playerMagicData.getAdditionalCastData() instanceof StarfallCastData)) {
-            Vec3 targetArea = Utils.moveToRelativeGroundLevel(world, Utils.raycastForEntity(world, entity, 40, true).getLocation(), 12);
+            Vec3 targetArea = Utils.moveToRelativeGroundLevel(world, RaycastBuilder.begin(world, entity)
+                    .range(40)
+                    .checkForBlocks(true)
+                    .build()
+                    .getLocation(), 12);
             playerMagicData.setAdditionalCastData(new StarfallCastData(targetArea));
         }
         super.onCast(world, spellLevel, entity, castSource, playerMagicData);

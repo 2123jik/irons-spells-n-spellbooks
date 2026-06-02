@@ -77,6 +77,7 @@ public class ParticleRegistry {
         public MapCodec<BlastwaveParticleOptions> codec() {
             return BlastwaveParticleOptions.MAP_CODEC;
         }
+
         public StreamCodec<? super RegistryFriendlyByteBuf, BlastwaveParticleOptions> streamCodec() {
             return BlastwaveParticleOptions.STREAM_CODEC;
         }
@@ -95,11 +96,62 @@ public class ParticleRegistry {
         public MapCodec<FlameStrikeParticleOptions> codec() {
             return FlameStrikeParticleOptions.MAP_CODEC;
         }
+
         public StreamCodec<? super RegistryFriendlyByteBuf, FlameStrikeParticleOptions> streamCodec() {
             return FlameStrikeParticleOptions.STREAM_CODEC;
         }
     });
     public static final Supplier<SimpleParticleType> EMBEROUS_ASH_PARTICLE = PARTICLE_TYPES.register("emberous_ash", () -> new SimpleParticleType(false));
     public static final Supplier<SimpleParticleType> FIERY_SMOKE_PARTICLE = PARTICLE_TYPES.register("fiery_smoke", () -> new SimpleParticleType(true));
+    public static final Supplier<ParticleType<EnderSlashParticleOptions>> ENDER_SLASH_PARTICLE = PARTICLE_TYPES.register("ender_slash", () -> new ParticleType<>(true) {
+        public MapCodec<EnderSlashParticleOptions> codec() {
+            return EnderSlashParticleOptions.MAP_CODEC;
+        }
+
+        public StreamCodec<? super RegistryFriendlyByteBuf, EnderSlashParticleOptions> streamCodec() {
+            return EnderSlashParticleOptions.STREAM_CODEC;
+        }
+    });
+
+    public static final Supplier<ParticleType<TraceParticleOptions>> TRACE_PARTICLE = PARTICLE_TYPES.register("trace", () -> new ParticleType<>(true) {
+        public MapCodec<TraceParticleOptions> codec() {
+            return TraceParticleOptions.MAP_CODEC;
+        }
+
+        public StreamCodec<? super RegistryFriendlyByteBuf, TraceParticleOptions> streamCodec() {
+            return TraceParticleOptions.STREAM_CODEC;
+        }
+    });
+
+    public static final Supplier<ParticleType<FallingBlockParticleOption>> FALLING_BLOCK_PARTICLE = PARTICLE_TYPES.register("falling_block", () -> new ParticleType<>(true) {
+        public MapCodec<FallingBlockParticleOption> codec() {
+            return FallingBlockParticleOption.codec((ParticleType<FallingBlockParticleOption>) this);
+        }
+
+        public StreamCodec<? super RegistryFriendlyByteBuf, FallingBlockParticleOption> streamCodec() {
+            return FallingBlockParticleOption.streamCodec((ParticleType<FallingBlockParticleOption>) this);
+        }
+    });
+
+    public static final Supplier<ParticleType<SwirlingParticleOptions>> SWIRLING_PARTICLE = PARTICLE_TYPES.register("swirling_particle", () -> new ParticleType<>(false) {
+        public MapCodec<SwirlingParticleOptions> codec() {
+            return SwirlingParticleOptions.MAP_CODEC;
+        }
+
+        public StreamCodec<? super RegistryFriendlyByteBuf, SwirlingParticleOptions> streamCodec() {
+            return SwirlingParticleOptions.STREAM_CODEC;
+        }
+    });
+
+    public static final Supplier<ParticleType<SoulfireRayParticleOptions>> SOULFIRE_RAY_PARTICLE = PARTICLE_TYPES.register("soulfire_ray", () -> new ParticleType<>(false) {
+        public MapCodec<SoulfireRayParticleOptions> codec() {
+            return SoulfireRayParticleOptions.MAP_CODEC;
+        }
+
+        public StreamCodec<? super RegistryFriendlyByteBuf, SoulfireRayParticleOptions> streamCodec() {
+            return SoulfireRayParticleOptions.STREAM_CODEC;
+        }
+    });
+    public static final Supplier<SimpleParticleType> SOUL_FIRE_PARTICLE = PARTICLE_TYPES.register("soul_fire", () -> new SimpleParticleType(false));
 
 }

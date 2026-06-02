@@ -4,6 +4,7 @@ import io.redspace.ironsspellbooks.IronsSpellbooks;
 import io.redspace.ironsspellbooks.api.attribute.IMagicAttribute;
 import io.redspace.ironsspellbooks.api.entity.IMagicEntity;
 import io.redspace.ironsspellbooks.api.events.SpellTeleportEvent;
+import io.redspace.ironsspellbooks.api.item.UpgradeData;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.magic.SpellSelectionManager;
 import io.redspace.ironsspellbooks.api.spells.*;
@@ -12,7 +13,6 @@ import io.redspace.ironsspellbooks.capabilities.magic.TargetEntityCastData;
 import io.redspace.ironsspellbooks.compat.Curios;
 import io.redspace.ironsspellbooks.config.ServerConfigs;
 import io.redspace.ironsspellbooks.damage.DamageSources;
-import io.redspace.ironsspellbooks.entity.VisualFallingBlockEntity;
 import io.redspace.ironsspellbooks.entity.mobs.AntiMagicSusceptible;
 import io.redspace.ironsspellbooks.entity.spells.root.PreventDismount;
 import io.redspace.ironsspellbooks.entity.spells.shield.ShieldEntity;
@@ -22,7 +22,7 @@ import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.UniqueItem;
 import io.redspace.ironsspellbooks.network.casting.CancelCastPacket;
 import io.redspace.ironsspellbooks.network.casting.SyncTargetingDataPacket;
-import io.redspace.ironsspellbooks.registries.ComponentRegistry;
+import io.redspace.ironsspellbooks.particle.FallingBlockParticleOption;
 import io.redspace.ironsspellbooks.registries.EntityRegistry;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import io.redspace.ironsspellbooks.util.ModTags;
@@ -44,6 +44,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -79,7 +81,8 @@ import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.SlotResult;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Predicate;
 
 import static io.redspace.ironsspellbooks.api.registry.AttributeRegistry.COOLDOWN_REDUCTION;
@@ -265,23 +268,20 @@ public class Utils {
     }
 
     public static HitResult checkEntityIntersecting(Entity entity, Vec3 start, Vec3 end, float bbInflation) {
-        Vec3 hitPos = null;
         if (entity.isMultipartEntity()) {
-            for (PartEntity p : entity.getParts()) {
-                var hit = p.getBoundingBox().inflate(bbInflation).clip(start, end).orElse(null);
+            for (PartEntity<?> p : entity.getParts()) {
+                var hit = p == null ? null : p.getBoundingBox().inflate(bbInflation).clip(start, end).orElse(null);
                 if (hit != null) {
-                    hitPos = hit;
-                    break;
+                    return new EntityHitResult(entity, hit);
                 }
             }
         } else {
-            hitPos = entity.getBoundingBox().inflate(bbInflation).clip(start, end).orElse(null);
+            var hit = entity.getBoundingBox().inflate(bbInflation).clip(start, end).orElse(null);
+            if (hit != null) {
+                return new EntityHitResult(entity, hit);
+            }
         }
-        if (hitPos != null)
-            return new EntityHitResult(entity, hitPos);
-        else
-            return BlockHitResult.miss(end, Direction.UP, BlockPos.containing(end));
-
+        return BlockHitResult.miss(end, Direction.getNearest(start.subtract(end)), BlockPos.containing(end));
     }
 
     public static Vec3 getPositionFromEntityLookDirection(Entity originEntity, float distance) {
@@ -289,6 +289,10 @@ public class Utils {
         return originEntity.getLookAngle().normalize().scale(distance).add(start);
     }
 
+    /**
+     * @deprecated Use {@link RaycastBuilder} instead.
+     */
+    @Deprecated
     public static HitResult raycastForEntity(Level level, Entity originEntity, float distance, boolean checkForBlocks) {
         Vec3 start = originEntity.getEyePosition();
         Vec3 end = originEntity.getLookAngle().normalize().scale(distance).add(start);
@@ -296,23 +300,58 @@ public class Utils {
         return raycastForEntity(level, originEntity, start, end, checkForBlocks);
     }
 
+    /**
+     * @deprecated Use {@link RaycastBuilder} instead.
+     */
+    @Deprecated
     public static HitResult raycastForEntity(Level level, Entity originEntity, float distance, boolean checkForBlocks, float bbInflation) {
         Vec3 start = originEntity.getEyePosition();
         Vec3 end = originEntity.getLookAngle().normalize().scale(distance).add(start);
-
-        return internalRaycastForEntity(level, originEntity, start, end, checkForBlocks, bbInflation, Utils::canHitWithRaycast);
+        return RaycastBuilder.begin(level, originEntity)
+                .start(start)
+                .end(end)
+                .checkForBlocks(checkForBlocks)
+                .bbInflation(bbInflation)
+                .build();
     }
 
+    /**
+     * @deprecated Use {@link RaycastBuilder} instead.
+     */
+    @Deprecated
     public static HitResult raycastForEntity(Level level, Entity originEntity, Vec3 start, Vec3 end, boolean checkForBlocks) {
-        return internalRaycastForEntity(level, originEntity, start, end, checkForBlocks, 0, Utils::canHitWithRaycast);
+        return RaycastBuilder.begin(level, originEntity)
+                .start(start)
+                .end(end)
+                .checkForBlocks(checkForBlocks)
+                .build();
     }
 
+    /**
+     * @deprecated Use {@link RaycastBuilder} instead.
+     */
+    @Deprecated
     public static HitResult raycastForEntity(Level level, Entity originEntity, Vec3 start, Vec3 end, boolean checkForBlocks, float bbInflation, Predicate<? super Entity> filter) {
-        return internalRaycastForEntity(level, originEntity, start, end, checkForBlocks, bbInflation, filter);
+        return RaycastBuilder.begin(level, originEntity)
+                .start(start)
+                .end(end)
+                .checkForBlocks(checkForBlocks)
+                .bbInflation(bbInflation)
+                .filter(filter)
+                .build();
     }
 
+    /**
+     * @deprecated Use {@link RaycastBuilder} instead.
+     */
+    @Deprecated
     public static HitResult raycastForEntityOfClass(Level level, Entity originEntity, Vec3 start, Vec3 end, boolean checkForBlocks, Class<? extends Entity> c) {
-        return internalRaycastForEntity(level, originEntity, start, end, checkForBlocks, 0, (entity) -> entity.getClass() == c);
+        return RaycastBuilder.begin(level, originEntity)
+                .start(start)
+                .end(end)
+                .checkForBlocks(checkForBlocks)
+                .filter(entity -> entity.getClass() == c)
+                .build();
     }
 
     public static void releaseUsingHelper(LivingEntity entity, ItemStack itemStack, int ticksUsed) {
@@ -370,36 +409,10 @@ public class Utils {
                     CancelCastPacket.cancelCast(serverPlayer, playerMagicData.getCastType() != CastType.LONG);
                 }
 
-                return spellData.getSpell().attemptInitiateCast(ItemStack.EMPTY, spellData.getSpell().getLevelFor(spellData.getLevel(), serverPlayer), serverPlayer.level, serverPlayer, CastSource.SPELLBOOK, true, Curios.SPELLBOOK_SLOT);
+                return spellData.getSpell().attemptInitiateCast(ItemStack.EMPTY, spellData.getSpell().getLevelFor(spellData.getLevel(), serverPlayer), serverPlayer.level, serverPlayer, spellSelection.getCastSource(), true, spellSelection.slot);
             }
         }
         return false;
-    }
-
-    private static HitResult internalRaycastForEntity(Level level, Entity originEntity, Vec3 start, Vec3 end, boolean checkForBlocks, float bbInflation, Predicate<? super Entity> filter) {
-        BlockHitResult blockHitResult = null;
-        if (checkForBlocks) {
-            blockHitResult = level.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, originEntity));
-            end = blockHitResult.getLocation();
-        }
-        AABB range = originEntity.getBoundingBox().expandTowards(end.subtract(start));
-
-        List<HitResult> hits = new ArrayList<>();
-        List<? extends Entity> entities = level.getEntities(originEntity, range, filter);
-        for (Entity target : entities) {
-            HitResult hit = checkEntityIntersecting(target, start, end, bbInflation);
-            if (hit.getType() != HitResult.Type.MISS) {
-                hits.add(hit);
-            }
-        }
-
-        if (!hits.isEmpty()) {
-            hits.sort(Comparator.comparingDouble(o -> o.getLocation().distanceToSqr(start)));
-            return hits.get(0);
-        } else if (checkForBlocks) {
-            return blockHitResult;
-        }
-        return BlockHitResult.miss(end, Direction.UP, BlockPos.containing(end));
     }
 
     public static void serverSideCancelCast(ServerPlayer serverPlayer) {
@@ -492,8 +505,13 @@ public class Utils {
         return a.add(b.subtract(a).scale(f));
     }
 
+    @Deprecated(forRemoval = true)
     public static boolean shouldHealEntity(LivingEntity healer, LivingEntity target) {
-        if (healer instanceof NeutralMob neutralMob && neutralMob.isAngryAt(target)) {
+        return shouldHealEntity((Entity) healer, (Entity) target);
+    }
+
+    public static boolean shouldHealEntity(Entity healer, Entity target) {
+        if (healer instanceof NeutralMob neutralMob && target instanceof LivingEntity livingEntity && neutralMob.isAngryAt(livingEntity)) {
             return false;
         } else if (healer == target) {
             return true;
@@ -558,12 +576,12 @@ public class Utils {
                 spellContainer.getActiveSpells().forEach(spellData -> spellContainer.removeSpell(spellData.getSpell()));
                 ISpellContainer.set(result, spellContainer.toImmutable());
             } else {
-                result.remove(ComponentRegistry.SPELL_CONTAINER);
+                ISpellContainer.remove(result);
             }
             hasResult = true;
         }
-        if (result.has(ComponentRegistry.UPGRADE_DATA)) {
-            result.remove(ComponentRegistry.UPGRADE_DATA);
+        if (UpgradeData.hasUpgradeData(result)) {
+            UpgradeData.removeUpgradeData(result);
             hasResult = true;
         }
         if (hasResult) {
@@ -574,7 +592,7 @@ public class Utils {
     }
 
     public static boolean validAntiMagicTarget(Entity entity) {
-        return canHitWithRaycast(entity) && (entity instanceof AntiMagicSusceptible || (entity instanceof Player) || (entity instanceof IMagicEntity));
+        return !entity.isSpectator() && (entity instanceof AntiMagicSusceptible || (entity instanceof Player) || (entity instanceof IMagicEntity));
     }
 
     /**
@@ -630,7 +648,11 @@ public class Utils {
     }
 
     public static boolean preCastTargetHelper(Level level, LivingEntity caster, MagicData playerMagicData, AbstractSpell spell, int range, float aimAssist, boolean sendFailureMessage, Predicate<LivingEntity> filter) {
-        var target = Utils.raycastForEntity(caster.level, caster, range, true, aimAssist);
+        var target = RaycastBuilder.begin(caster.level, caster)
+                .range(range)
+                .checkForBlocks(true)
+                .bbInflation(aimAssist)
+                .build();
         LivingEntity livingTarget = null;
         if (target instanceof EntityHitResult entityHit) {
             if (entityHit.getEntity() instanceof LivingEntity livingEntity && filter.test(livingEntity)) {
@@ -749,10 +771,19 @@ public class Utils {
                 weaponDamage += processEnchantment(entity.level, Enchantments.SHARPNESS, EnchantmentEffectComponents.DAMAGE, weaponItem.get(DataComponents.ENCHANTMENTS));
             }
             return weaponDamage;
-            //var pmg = MagicData.getPlayerMagicData(entity);
-            //return target == null || entity.level.isClientSide ? weapon : EnchantmentHelper.modifyDamage((ServerLevel)entity.level,pmg.isCasting() ? pmg.getPlayerCastingItem() : entity.getMainHandItem(),target,)
         }
         return 0;
+    }
+
+    /**
+     * @return A factor used to dampen values based on given entity's knockback resistance. Returns max if the entity has no knockback resistance.
+     */
+    public static float clampedKnockbackResistanceFactor(Entity entity, float min, float max) {
+        if (entity instanceof LivingEntity living) {
+            return Mth.clamp(1 - (float) living.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), min, max);
+        } else {
+            return max;
+        }
     }
 
     public static float processEnchantment(Level level, ResourceKey<Enchantment> enchantmentKey, DataComponentType<List<ConditionalEffect<EnchantmentValueEffect>>> component, ItemEnchantments enchantments) {
@@ -810,22 +841,20 @@ public class Utils {
     }
 
     public static void createTremorBlock(Level level, BlockPos blockPos, float impulseStrength) {
+        if (level.isClientSide) {
+            return;
+        }
         if (level.getBlockState(blockPos.above()).isAir() || level.getBlockState(blockPos.above().above()).isAir()) {
-            var fallingblockentity = new VisualFallingBlockEntity(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), level.getBlockState(blockPos), 10);
-            fallingblockentity.setDeltaMovement(0, impulseStrength, 0);
-            level.addFreshEntity(fallingblockentity);
+            MagicManager.spawnParticles(level, new FallingBlockParticleOption(level.getBlockState(blockPos), new Vec3(0, impulseStrength, 0)), blockPos.getX() + 0.5, blockPos.getY(), blockPos.getZ() + 0.5, 1, 0, 0, 0, 0, true);
             if (!level.getBlockState(blockPos.above()).isAir()) {
-                var fallingblockentity2 = new VisualFallingBlockEntity(level, blockPos.getX(), blockPos.getY() + 1, blockPos.getZ(), level.getBlockState(blockPos.above()), 10);
-                fallingblockentity2.setDeltaMovement(0, impulseStrength, 0);
-                level.addFreshEntity(fallingblockentity2);
+                // if non-solid block (ie snow, grass, fire, etc) is on top, also create a tremor of that
+                MagicManager.spawnParticles(level, new FallingBlockParticleOption(level.getBlockState(blockPos.above()), new Vec3(0, impulseStrength, 0)), blockPos.getX() + 0.5, blockPos.getY() + 1, blockPos.getZ() + 0.5, 1, 0, 0, 0, 0, true);
             }
         }
     }
 
     public static void createTremorBlockWithState(Level level, BlockState state, BlockPos blockPos, float impulseStrength) {
-        var fallingblockentity = new VisualFallingBlockEntity(level, blockPos.getX(), blockPos.getY(), blockPos.getZ(), state, 10);
-        fallingblockentity.setDeltaMovement(0, impulseStrength, 0);
-        level.addFreshEntity(fallingblockentity);
+        MagicManager.spawnParticles(level, new FallingBlockParticleOption(state, new Vec3(0, impulseStrength, 0)), blockPos.getX() + 0.5, blockPos.getY() + 1, blockPos.getZ() + 0.5, 1, 0, 0, 0, 0, true);
     }
 
     public static ItemStack setPotion(ItemStack itemStack, Holder<Potion> potion) {
@@ -880,5 +909,43 @@ public class Utils {
         float angle = (float) Math.acos(dot);
 
         return new Quaternionf().rotationAxis(angle, axis);
+    }
+
+    public static void addFreezeTicks(LivingEntity target, int ticks) {
+        addFreezeTicks(target, ticks, target.getTicksRequiredToFreeze() * 5);
+    }
+
+    public static void addFreezeTicks(LivingEntity target, int ticks, int cap) {
+        target.setTicksFrozen(Math.min(target.getTicksFrozen() + ticks, cap < 0 ? Integer.MAX_VALUE : cap));
+    }
+
+    public static Vec3 slerp(double t, Vec3 from, Vec3 to) {
+        from = from.normalize();
+        to = to.normalize();
+        double dot = from.dot(to);
+        double theta = Math.acos(dot) * t;
+        Vec3 relative = to.subtract(from.scale(dot)).normalize();
+        Vec3 result = from.scale(Math.cos(theta)).add(relative.scale(Math.sin(theta)));
+        return result;
+    }
+
+    public static boolean isSameItemSameComponentsIgnoreDurability(ItemStack a, ItemStack b) {
+        a = a.copy();
+        b = b.copy();
+        a.remove(DataComponents.DAMAGE);
+        b.remove(DataComponents.DAMAGE);
+        return ItemStack.isSameItemSameComponents(a, b);
+    }
+
+    public static MobEffectInstance addEffectStack(LivingEntity entity, Holder<MobEffect> effect, int amplifierCap, int defaultDuration) {
+        MobEffectInstance previous = entity.getEffect(effect);
+        MobEffectInstance inst;
+        if (previous != null) {
+            inst = new MobEffectInstance(effect, Math.max(defaultDuration, previous.getDuration()), Math.min(previous.getAmplifier() + 1, amplifierCap), previous.isAmbient(), previous.isVisible(), previous.showIcon());
+        } else {
+            inst = new MobEffectInstance(effect, defaultDuration, 0, false, false, true);
+        }
+        entity.addEffect(inst);
+        return inst;
     }
 }

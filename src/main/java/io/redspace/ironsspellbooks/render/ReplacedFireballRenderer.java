@@ -21,10 +21,11 @@ public class ReplacedFireballRenderer extends FireballRenderer {
 
     @Override
     public void render(Projectile entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int light) {
-        if (entity instanceof LargeFireball && ClientConfigs.REPLACE_GHAST_FIREBALL.get() || entity instanceof SmallFireball && ClientConfigs.REPLACE_BLAZE_FIREBALL.get())
+        if (entity instanceof LargeFireball && ClientConfigs.REPLACE_GHAST_FIREBALL.get() || entity instanceof SmallFireball && ClientConfigs.REPLACE_BLAZE_FIREBALL.get()) {
             super.render(entity, yaw, partialTicks, poseStack, bufferSource, light);
-        else
+        } else {
             backupRenderer.render((Fireball) entity, yaw, partialTicks, poseStack, bufferSource, light);
+        }
     }
 
 

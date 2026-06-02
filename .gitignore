@@ -18,6 +18,9 @@ build
 .gradle
 
 # other
+.cursor
+docs
+.scripts
 mcmodsrepo/
 backups/
 eclipse

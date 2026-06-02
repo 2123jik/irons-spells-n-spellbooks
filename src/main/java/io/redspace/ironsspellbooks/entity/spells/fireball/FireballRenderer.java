@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import io.redspace.ironsspellbooks.IronsSpellbooks;
+import io.redspace.ironsspellbooks.entity.spells.AbstractMagicProjectile;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -20,21 +21,20 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.phys.Vec3;
 
 public class FireballRenderer extends EntityRenderer<Projectile> {
 
     public static final ModelLayerLocation MODEL_LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "fireball_model"), "main");
-    public static final ResourceLocation BASE_TEXTURE = IronsSpellbooks.id("textures/entity/fireball/magma.png");
+    public static final ResourceLocation BASE_TEXTURE = IronsSpellbooks.id("textures/entity/fireball/fireball_core.png");
     public static final ResourceLocation[] FIRE_TEXTURES = {
             IronsSpellbooks.id("textures/entity/fireball/fire_0.png"),
             IronsSpellbooks.id("textures/entity/fireball/fire_1.png"),
             IronsSpellbooks.id("textures/entity/fireball/fire_2.png"),
-            IronsSpellbooks.id("textures/entity/fireball/fire_3.png"),
+            IronsSpellbooks.id("textures/entity/fireball/fire_3.png")/*,
             IronsSpellbooks.id("textures/entity/fireball/fire_4.png"),
             IronsSpellbooks.id("textures/entity/fireball/fire_5.png"),
             IronsSpellbooks.id("textures/entity/fireball/fire_6.png"),
-            IronsSpellbooks.id("textures/entity/fireball/fire_7.png")
+            IronsSpellbooks.id("textures/entity/fireball/fire_7.png")*/
     };
 
 
@@ -64,11 +64,15 @@ public class FireballRenderer extends EntityRenderer<Projectile> {
         poseStack.pushPose();
         poseStack.translate(0, entity.getBoundingBox().getYsize() * .5f, 0);
         poseStack.scale(scale, scale, scale);
-        Vec3 motion = entity.getDeltaMovement();
-        float xRot = -((float) (Mth.atan2(motion.horizontalDistance(), motion.y) * (double) (180F / (float) Math.PI)) - 90.0F);
-        float yRot = -((float) (Mth.atan2(motion.z, motion.x) * (double) (180F / (float) Math.PI)) + 90.0F);
-        poseStack.mulPose(Axis.YP.rotationDegrees(yRot));
-        poseStack.mulPose(Axis.XP.rotationDegrees(xRot));
+        if (entity instanceof AbstractMagicProjectile) {
+            poseStack.mulPose(Axis.YP.rotationDegrees(Mth.lerp(partialTicks, entity.yRotO, entity.getYRot()) + 180));
+            poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(partialTicks, entity.xRotO, entity.getXRot())));
+        } else {
+            // replaced fireball renderer. these use different rules
+            poseStack.mulPose(Axis.YP.rotationDegrees(-Mth.lerp(partialTicks, entity.yRotO, entity.getYRot())));
+            poseStack.mulPose(Axis.XP.rotationDegrees(-Mth.lerp(partialTicks, entity.xRotO, entity.getXRot())));
+        }
+
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(getTextureLocation(entity)));
         this.body.render(poseStack, consumer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
 
@@ -88,7 +92,7 @@ public class FireballRenderer extends EntityRenderer<Projectile> {
     }
 
     public ResourceLocation getFireTextureLocation(Projectile entity) {
-        int frame = (entity.tickCount) % FIRE_TEXTURES.length;
+        int frame = (entity.tickCount / 2) % FIRE_TEXTURES.length;
         return FIRE_TEXTURES[frame];
     }
 }

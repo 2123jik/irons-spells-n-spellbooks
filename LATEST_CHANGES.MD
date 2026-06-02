@@ -1,52 +1,51 @@
 ### Additions
-- Added Fire Artifact: the Infernal Sorcerer's Chestplate
-  - Has normal Artifact attributes
-  - Has passive ability: Immolation
-- Added the Twilight Gale, a crystalline spear enthralled with lightning magic
-  - Imbued with Volt Strike 5
-  - Can be thrown with enhanced trident-like mechanics
-    - Item is not consumed to throw, but goes on 10s cooldown
-    - Picking up thrown item immediately resets cooldown
-    - Throw damage scales with attack damage and enchantments
-    - Can be enchanted as a Sword
-    - Can be enchanted with Loyalty
-    - Can be enchanted with Channeling, which empowers all throws with lightning, making thrown damage scale off of Lightning Spell Power
-- Added Config for disabling Ice Spider Patrols
+- Added Iron's Patreon Lib integration
+- Added Tyros Statue, a new decoration multiblock
+- Added boss configs for the Dead King (mirroring Tyro's configs)
+  - Added `additionalHealth` config
+  - Added `additionalAttackDamage` config
+  - Added `additionalSpellPower` config
+- Added Per-Player loot to the Dead King
+  - Drops new Bone Key item for each player
+- Added Soul Burn debuff
+  - Decreases incoming healing by 5% per level
+- Added Ominous Boss Fight to Tyros
+  - Has higher base stats
+  - Starts in Soul Mode
+  - Inflicts stacks of Soul Burn on melee hits
+  - Unlocks new melee attack combo
+  - Unlocks new dagger throw ability
+  - Unlocks higher max Knight summon count
+  - Will throw Fire Orbs into the arena, which must be destroyed before fully charging. Fully charged orbs cause a devastating explosion
+- Added Ominous Boss Fight to the Dead King
+  - Killing summons has a chance to trigger a Sacrifice explosion
+  - Now creates Undead Rifts intermittently, spewing a large amount of summons onto the battlefield
 
 ### Changes
-- Adjusted new School Armor Smithing Recipes to avoid recipe viewer conflict
-  - Recipes now require Arcane Essence as an additional material, because the missing slot bugged out non-JEI recipe viewers
-  - Added a crafting recipe variant to make the change more intuitive (although Smithing Table is still required to transfer enchantments/imbues/others)
-  - May be revisited in the future
-- Rebalanced Ice Spider Patrol spawnrate
-  - Delay range increased from 4-5 minutes to 8-11 minutes
-  - Player count less significantly reduces delay
-  - Spawn chance increased from 25% to 50%, reducing inconsistency in spawnrates
-  - Added config for disabling partrols
-  - Fixed events not firing, preventing certain compatibilities between mods
-- Improved Spell Wheel text display
-  - Now displays cooldown, if the cooldown is greater than zero
-  - Mana cost line is no longer displayed if the mana cost is zero
-  - Fixed visual bug with line separator
-- Pocket Dimension now prevents all types of teleportation
-- Overhauled Ice Spike visuals
+- Improve Dead King movement controllers when flying, walking, and attacking
+- Reworked Dead King's player scaling to mirror Tyro's
+- Telekinesis has unique animation
+- Reworked Dead King Loot
+  - todo
+- Changed Catacombs
+  - todo
+  - (also there's new pieces)
 
 ### Fixes
-- Fixed Ice Spider Patrol not firing associated spawning events, breaking compatibility with some mods
-- Fixed spectators being able to be hit by raycast spells
-- Fixed casting Pocket Dimension while riding a mob desyncing the player
-- Fixed Chain Lightning entities persisting longer than they should
-- Fixed Ice Tomb collision preventing Ice Blocks from hitting/proccing them
-- Fire Fields more strictly respects friendlyfire
-- Snowball more strictly respects friendlyfire
-- Fixed Pocket Dimension blocks from being destroyed by the Wither
-- Fixed Ice Spikes from clipping through the ground
-- Fixed Ice Tomb collision from blocking certain raycasts
-- Fixed Cursed Armor Stands from not have persistence in the Citadel structure
-- Fixed incompatibility with some shaders playing mob animations during different render passes
+- Fixed Continuous Cast interval shortness
+- 1.20.1: Fixed an issue where armorstands in spawn chunks wearing upgraded armor would lookup unloaded upgrade types
+- Fixed entity summon tracking on world relog
+- Fixed ranged spell attacks without a projectile from being marked as direct damage
+- Fixed Raise Dead spell from not checking collision when creating entities
+- Tyros and Keepers will not be able to aggro the Cursed Armor Stands
 
 ### API
-- Removed deprecated `SyncedSpellData` effect flags system (replaced by api-friendly `ISyncedMobEffect`)
-  - Removed SyncedSpellData  static fields `ANGEL_WINGS`, `EVASION`, `HEARTSTOP`, `ABYSSAL_SHROUD`, `ASCENSION`, `TRUE_INVIS`, `CHARGED`, and `PLANAR_SIGHT`
-  - Removed `SyncedSpellData#hasEffect`, `SyncedSpellData#hasLocalEffect`, `SyncedSpellData#addEffect`, `SyncedSpellData#addLocalEffect`, `SyncedSpellData#removeEffect`, `SyncedSpellData#removeLocalEffect`, `SyncedSpellData#addEffects`, `SyncedSpellData#removeEffects`
-  - Constructors for `EnergySwirlLayer`s no longer take a long flag, instead a predicate or `Holder<MobEffect>`
+- Created `RaycastBuilder`, a helper to more easily configure raycasting and raycast settings, opposed to all the helpers in `Utils` (which are now deprecated, and simply return a `RaycastBuilder` result)
+- Now depends on Iron's Patreon Lib
+- Added `IOminousEntity`
+  - Entities implement this interface automatically turn ominous (`onOminousTrigger()`) when first joining a level near a player with Bad Omen/Trial Omen
+- Added `SummonManager#saveSummonerData` helper for serializing any entity's summon data to world storage
+- `SummonManager#handlePlayerDisconnect` is now deprecated
+  - Use aforementioned `SummonManager#saveSummonerData` instead
+- Added `SpellDamageSource#indirect()`, which marks a spell's damage as indirect, whether there is a projectile or not
+- Added `irons_spellbooks:clear_vault_data` Structure Processor to help ensure vaults used in structures are of a clean slate

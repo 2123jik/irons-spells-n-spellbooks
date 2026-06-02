@@ -31,7 +31,8 @@ import net.minecraft.world.item.TieredItem;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 @mezz.jei.api.JeiPlugin
@@ -64,19 +65,19 @@ public class JeiPlugin implements IModPlugin {
 
     static class ItemFinder {
         Collection<ItemStack> allItemStacks; // hold on to result because jei does work to discover it
-        List<ArmorItem> ironsArmorItems;
-        List<TieredItem> ironsTieredItems;
-        List<InkItem> inkItems;
-        List<Item> imbueable;
-        List<Item> upgradeable;
+        Set<ArmorItem> ironsArmorItems;
+        Set<TieredItem> ironsTieredItems;
+        Set<InkItem> inkItems;
+        Set<Item> imbueable;
+        Set<Item> upgradeable;
 
         ItemFinder(IIngredientManager ingredientManager) {
             this.allItemStacks = ingredientManager.getAllItemStacks();
-            ironsArmorItems = new ArrayList<>();
-            ironsTieredItems = new ArrayList<>();
-            inkItems = new ArrayList<>();
-            imbueable = new ArrayList<>();
-            upgradeable = new ArrayList<>();
+            ironsArmorItems = new HashSet<>();
+            ironsTieredItems = new HashSet<>();
+            inkItems = new HashSet<>();
+            imbueable = new HashSet<>();
+            upgradeable = new HashSet<>();
             allItemStacks.forEach(stack -> {
                 var item = stack.getItem();
                 if (BuiltInRegistries.ITEM.getKey(item).getNamespace().equals(IronsSpellbooks.MODID)) {
@@ -128,6 +129,7 @@ public class JeiPlugin implements IModPlugin {
         registration.addItemStackInfo(new ItemStack(ItemRegistry.DRAGONSKIN.get()), Component.translatable("item.irons_spellbooks.dragonskin.guide"));
         registration.addItemStackInfo(new ItemStack(ItemRegistry.RUINED_BOOK.get()), Component.translatable("item.irons_spellbooks.ruined_book.guide"));
         registration.addItemStackInfo(new ItemStack(ItemRegistry.CINDER_ESSENCE.get()), Component.translatable("item.irons_spellbooks.cinder_essence.guide"));
+        registration.addItemStackInfo(new ItemStack(ItemRegistry.TINCTURE_OF_FORGETFULNESS.get()), Component.translatable("item.irons_spellbooks.tincture_of_forgetfulness.guide"));
         registration.addItemStackInfo(new ItemStack(ItemRegistry.LIGHTNING_ROD_STAFF.get()), Component.translatable("item.irons_spellbooks.lightning_rod.guide"));
         registration.addItemStackInfo(new ItemStack(ItemRegistry.CURSED_DOLL_SPELLBOOK.get()), Component.translatable("item.irons_spellbooks.cursed_doll_spell_book.guide"));
         registration.addIngredientInfo(ItemRegistry.FURLED_MAP.get(), Component.translatable("item.irons_spellbooks.furled_map.guide"));

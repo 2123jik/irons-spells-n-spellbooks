@@ -2,6 +2,7 @@ package io.redspace.ironsspellbooks.player;
 
 import io.redspace.ironsspellbooks.IronsSpellbooks;
 import io.redspace.ironsspellbooks.api.entity.IMagicEntity;
+import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.magic.SpellSelectionManager;
 import io.redspace.ironsspellbooks.api.registry.AttributeRegistry;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
@@ -9,16 +10,15 @@ import io.redspace.ironsspellbooks.api.spells.CastSource;
 import io.redspace.ironsspellbooks.api.spells.CastType;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
 import io.redspace.ironsspellbooks.api.spells.SpellData;
-import io.redspace.ironsspellbooks.api.util.MusicManager;
 import io.redspace.ironsspellbooks.api.util.FogManager;
+import io.redspace.ironsspellbooks.api.util.MusicManager;
+import io.redspace.ironsspellbooks.api.util.RaycastBuilder;
 import io.redspace.ironsspellbooks.api.util.Utils;
-import io.redspace.ironsspellbooks.capabilities.magic.SyncedSpellData;
 import io.redspace.ironsspellbooks.config.ServerConfigs;
-import io.redspace.ironsspellbooks.effect.AbyssalShroudEffect;
-import io.redspace.ironsspellbooks.effect.AscensionEffect;
 import io.redspace.ironsspellbooks.effect.CustomDescriptionMobEffect;
 import io.redspace.ironsspellbooks.effect.ISyncedMobEffect;
 import io.redspace.ironsspellbooks.effect.guiding_bolt.GuidingBoltManager;
+import io.redspace.ironsspellbooks.entity.mobs.wizards.cursed_armor_stand.CursedArmorStandModel;
 import io.redspace.ironsspellbooks.item.Scroll;
 import io.redspace.ironsspellbooks.item.SpellBook;
 import io.redspace.ironsspellbooks.item.UpgradeOrbItem;
@@ -27,11 +27,11 @@ import io.redspace.ironsspellbooks.registries.ComponentRegistry;
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.registries.UpgradeOrbTypeRegistry;
 import io.redspace.ironsspellbooks.render.SpellRenderingHelper;
+import io.redspace.ironsspellbooks.spells.CastingMobAimingData;
 import io.redspace.ironsspellbooks.spells.blood.RayOfSiphoningSpell;
 import io.redspace.ironsspellbooks.spells.ender.RecallSpell;
 import io.redspace.ironsspellbooks.spells.fire.BurningDashSpell;
 import io.redspace.ironsspellbooks.spells.fire.RaiseHellSpell;
-import io.redspace.ironsspellbooks.spells.lightning.VoltStrikeSpell;
 import io.redspace.ironsspellbooks.util.MinecraftInstanceHelper;
 import io.redspace.ironsspellbooks.util.ParticleHelper;
 import io.redspace.ironsspellbooks.util.TooltipsUtils;
@@ -43,19 +43,23 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -66,6 +70,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @EventBusSubscriber(Dist.CLIENT)
 public class ClientPlayerEvents {
@@ -133,7 +138,7 @@ public class ClientPlayerEvents {
                     /*
                     Status Effect Visuals
                      */
-                    if (livingEntity.isAutoSpinAttack() && spellData.getSpinAttackType() == SpinAttackType.FIRE) {
+                    if (livingEntity.isAutoSpinAttack() && spellData.getSpinAttackType().equals(SpinAttackType.FIRE)) {
                         BurningDashSpell.ambientParticles(level, livingEntity);
                     }
                     /*
@@ -142,7 +147,21 @@ public class ClientPlayerEvents {
                     //TODO: what is this, shouldnt there be an onClientCastTick?
                     if (spellData.isCasting()) {
                         if (spellData.getCastingSpellId().equals(SpellRegistry.RAY_OF_SIPHONING_SPELL.get().getSpellId())) {
-                            Vec3 impact = Utils.raycastForEntity(entity.level, entity, RayOfSiphoningSpell.getRange(0), true).getLocation().subtract(0, .25, 0);
+                            HitResult hit;
+                            if (entity instanceof Mob mob && MagicData.getPlayerMagicData(mob).getAdditionalCastData() instanceof CastingMobAimingData aimingData) {
+                                hit = RaycastBuilder.begin(entity.level, entity)
+                                        .start(entity.getEyePosition())
+                                        .end(entity.getEyePosition().add(aimingData.getForward(entity).scale(RayOfSiphoningSpell.getRange(0))))
+                                        .checkForBlocks(true)
+                                        .build();
+                            } else {
+                                hit = RaycastBuilder.begin(entity.level, entity)
+                                        .range(RayOfSiphoningSpell.getRange(0))
+                                        .checkForBlocks(true)
+                                        .build();
+
+                            }
+                            Vec3 impact = hit.getLocation().subtract(0, .25, 0);
                             for (int i = 0; i < 8; i++) {
                                 Vec3 motion = new Vec3(
                                         Utils.getRandomScaled(.2f),
@@ -301,19 +320,47 @@ public class ClientPlayerEvents {
 
     private static void handleImbuedSpellTooltip(ItemStack stack, LocalPlayer player, List<Component> lines, boolean advanced) {
         var spellContainer = ISpellContainer.get(stack);
-        int i = advanced ? TooltipsUtils.indexOfAdvancedText(lines, stack) : lines.size();
+        int tooltipInjectIndex = advanced ? TooltipsUtils.indexOfAdvancedText(lines, stack) : lines.size();
         if (!spellContainer.isEmpty()) {
             var additionalLines = new ArrayList<Component>();
+            int spellCount = spellContainer.getActiveSpellCount();
+            var header = Component.translatable(spellCount > 1 ? "tooltip.irons_spellbooks.imbued_tooltip_plural" : "tooltip.irons_spellbooks.imbued_tooltip").withStyle(ChatFormatting.GRAY);
+            if (spellCount > 3) {
+                additionalLines.add(Component.empty());
+                // collapse each spell into accordion-ish view
+                SpellSelectionManager spellSelectionManager = ClientMagicData.getSpellSelectionManager();
+                for (int i = 0; i < spellContainer.getActiveSpellCount(); i++) {
+                    var spellSlot = spellContainer.getSpellAtIndex(i);
+                    var spellText = TooltipsUtils.getTitleComponent(spellSlot, player).setStyle(Style.EMPTY);
+                    var option = spellSelectionManager.getSpellSlot(spellSelectionManager.getSelectionIndex());
+                    if (option != null &&
+                            option.slotIndex == i &&
+                            ((option.slot.equals("mainhand") && player.getMainHandItem() == stack) || (option.slot.equals("offhand") && player.getOffhandItem() == stack))
+                    ) {
+                        var shiftMessage = TooltipsUtils.formatActiveSpellTooltip(stack, spellSelectionManager.getSelectedSpellData(), CastSource.SPELLBOOK, player);
+                        shiftMessage.remove(0); // remove buffering empty line
+                        TooltipsUtils.addShiftTooltip(
+                                additionalLines,
+                                Component.literal("> ").append(spellText).withStyle(ChatFormatting.YELLOW),
+                                shiftMessage.stream().map(component -> Component.literal(" ").append(component)).collect(Collectors.toList())
+                        );
+                    } else {
+                        additionalLines.add(Component.literal(" ").append(spellText.withStyle(Style.EMPTY.withColor(0x8888fe))));
+                    }
+                }
+            } else {
+                // simple imbue display (fully expanded)
+                spellContainer.getActiveSpells().forEach(spellSlot -> {
+                    var spellTooltip = TooltipsUtils.formatActiveSpellTooltip(stack, spellSlot.spellData(), CastSource.SWORD, player);
+                    //Indent the title because we'll have an additional header
+                    spellTooltip.set(1, Component.literal(" ").append(spellTooltip.get(1)));
+                    additionalLines.addAll(spellTooltip);
+                });
+            }
 
-            spellContainer.getActiveSpells().forEach(spellSlot -> {
-                var spellTooltip = TooltipsUtils.formatActiveSpellTooltip(stack, spellSlot.spellData(), CastSource.SWORD, player);
-                //Indent the title because we'll have an additional header
-                spellTooltip.set(1, Component.literal(" ").append(spellTooltip.get(1)));
-                additionalLines.addAll(spellTooltip);
-            });
             //Add header to sword tooltip
-            additionalLines.add(1, Component.translatable("tooltip.irons_spellbooks.imbued_tooltip").withStyle(ChatFormatting.GRAY));
-            lines.addAll(i < 0 ? lines.size() : i, additionalLines);
+            additionalLines.add(1, header);
+            lines.addAll(tooltipInjectIndex < 0 ? lines.size() : tooltipInjectIndex, additionalLines);
         }
     }
 
@@ -383,6 +430,31 @@ public class ClientPlayerEvents {
             event.setRed(f * .15f);
             event.setGreen(f1 * .15f);
             event.setBlue(f2 * .15f);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onChatReceived(ClientChatReceivedEvent event) {
+        //Test if it is a player (main or other) and the message
+        if (!FMLLoader.isProduction()) {
+            var str = event.getMessage().getString();
+            if (str.contains("armorstand")) {
+                int id = 0;
+                int i = str.indexOf('[');
+                double[] ad = new double[3];
+                for (int c = 0; c < 100; c++) {
+                    int j = str.indexOf(',', i + 1);
+                    if (j >= 0) {
+                        ad[id++] = Double.parseDouble(str.substring(i + 1, j));
+                    } else {
+                        ad[id] = Double.parseDouble(str.substring(i + 1, str.indexOf(']')));
+                        break;
+                    }
+                    i = j;
+                }
+                CursedArmorStandModel.rightArmPos = ad;
+            }
+
         }
     }
 }

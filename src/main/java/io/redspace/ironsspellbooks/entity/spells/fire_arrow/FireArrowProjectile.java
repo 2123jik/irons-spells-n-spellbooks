@@ -26,6 +26,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -63,7 +64,7 @@ public class FireArrowProjectile extends AbstractMagicProjectile {
             var x = Mth.lerp(f, d0, this.getX() + vec3.x);
             var y = Mth.lerp(f, d1, this.getY() + vec3.y) - .4;
             var z = Mth.lerp(f, d2, this.getZ() + vec3.z);
-            this.level.addParticle(ParticleHelper.FIRE, true,x - random.x, y + 0.5D - random.y, z - random.z, random.x * .5f, random.y * .5f, random.z * .5f);
+            this.level.addParticle(ParticleHelper.FIRE, true, x - random.x, y + 0.5D - random.y, z - random.z, random.x * .5f, random.y * .5f, random.z * .5f);
         }
     }
 
@@ -90,7 +91,7 @@ public class FireArrowProjectile extends AbstractMagicProjectile {
     }
 
     @Override
-    protected void onHit(HitResult hitResult) {
+    protected void onHit(@NotNull HitResult hitResult) {
         if (!this.level.isClientSide) {
             float directDamage = this.damage;
             float explosionDamage = directDamage * .5f;
@@ -133,7 +134,7 @@ public class FireArrowProjectile extends AbstractMagicProjectile {
             }
             PacketDistributor.sendToPlayersTrackingEntity(this, new FieryExplosionParticlesPacket(hitResult.getLocation().subtract(getDeltaMovement().scale(0.25)), getExplosionRadius() * .7f));
             playSound(SoundEvents.GENERIC_EXPLODE.value(), 4.0F, (1.0F + (this.level.random.nextFloat() - this.level.random.nextFloat()) * 0.2F) * 0.7F);
-            this.discard();
+            this.discardHelper(hitResult);
         }
     }
 }

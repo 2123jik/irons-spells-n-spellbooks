@@ -30,7 +30,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-@AutoSpellConfig
 public class RaiseHellSpell extends AbstractSpell {
     private final ResourceLocation spellId = ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "raise_hell");
 
@@ -113,18 +112,18 @@ public class RaiseHellSpell extends AbstractSpell {
         }
         float radius = getRadius(spellLevel, entity);
         float range = 1.7f;
-        Vec3 hitLocation = Utils.moveToRelativeGroundLevel(level, Utils.raycastForBlock(level, entity.getEyePosition(), entity.getEyePosition().add(entity.getForward().multiply(range, 0, range)), ClipContext.Fluid.NONE).getLocation(), 3);
+        Vec3 hitLocation = Utils.moveToRelativeGroundLevel(level, Utils.raycastForBlock(level, entity.getEyePosition(), entity.getEyePosition().add(entity.getForward().multiply(range, 0, range)), ClipContext.Fluid.NONE).getLocation(), 4);
         FireEruptionAoe aoe = new FireEruptionAoe(level, radius);
         aoe.setOwner(entity);
         aoe.setDamage(getDamage(spellLevel, entity));
         aoe.moveTo(hitLocation);
         level.addFreshEntity(aoe);
-        CameraShakeManager.addCameraShake(new CameraShakeData(10 + (int) radius, hitLocation, radius * 2 + 5));
+        CameraShakeManager.addCameraShake(new CameraShakeData(level, 20 + (int) radius, hitLocation, radius * 2 + 5));
         super.onCast(level, spellLevel, entity, castSource, playerMagicData);
     }
 
     private float getDamage(int spellLevel, LivingEntity entity) {
-        return getSpellPower(spellLevel, entity) +Utils.getWeaponDamage(entity);
+        return getSpellPower(spellLevel, entity) + Utils.getWeaponDamage(entity);
     }
 
     private float getRadius(int spellLevel, LivingEntity entity) {

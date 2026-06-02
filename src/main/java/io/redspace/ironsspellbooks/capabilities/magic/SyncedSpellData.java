@@ -55,7 +55,8 @@ public class SyncedSpellData {
         buffer.writeInt(data.castingSpellLevel);
         buffer.writeFloat(data.heartStopAccumulatedDamage);
         buffer.writeInt(data.evasionHitsRemaining);
-        buffer.writeEnum(data.spinAttackType);
+        buffer.writeResourceLocation(data.spinAttackType.textureId());
+        buffer.writeBoolean(data.spinAttackType.fullbright());
         buffer.writeUtf(data.castingEquipmentSlot);
         data.learnedSpellData.writeToBuffer(buffer);
         data.spellSelection.writeToBuffer(buffer);
@@ -68,7 +69,7 @@ public class SyncedSpellData {
         data.castingSpellLevel = buffer.readInt();
         data.heartStopAccumulatedDamage = buffer.readFloat();
         data.evasionHitsRemaining = buffer.readInt();
-        data.spinAttackType = buffer.readEnum(SpinAttackType.class);
+        data.spinAttackType = new SpinAttackType(buffer.readResourceLocation(), buffer.readBoolean());
         data.castingEquipmentSlot = buffer.readUtf();
         data.learnedSpellData.readFromBuffer(buffer);
         data.spellSelection.readFromBuffer(buffer);
@@ -170,8 +171,14 @@ public class SyncedSpellData {
     }
 
     public void learnSpell(AbstractSpell spell) {
+        learnSpell(spell, true);
+    }
+
+    public void learnSpell(AbstractSpell spell, boolean sync) {
         this.learnedSpellData.learnedSpells.add(spell.getSpellResource());
-        doSync();
+        if (sync) {
+            doSync();
+        }
     }
 
     public void forgetAllSpells() {

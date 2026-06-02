@@ -1,9 +1,11 @@
 package io.redspace.ironsspellbooks.api.magic;
 
 import io.redspace.ironsspellbooks.IronsSpellbooks;
+import io.redspace.ironsspellbooks.api.spells.AbstractSpell;
 import io.redspace.ironsspellbooks.api.spells.CastSource;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
 import io.redspace.ironsspellbooks.api.spells.SpellData;
+import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.compat.Curios;
 import io.redspace.ironsspellbooks.gui.overlays.SpellSelection;
 import io.redspace.ironsspellbooks.network.gui.SelectSpellPacket;
@@ -62,7 +64,7 @@ public class SpellSelectionManager {
             IronsSpellbooks.LOGGER.debug("SpellSelectionManager init.begin spellSelection:{} valid:{} index:{} isClient:{}", spellSelection, selectionValid, selectionIndex, player.level.isClientSide);
         }
 
-        CuriosApi.getCuriosInventory(player).ifPresent(inv -> inv.findCurios(ISpellContainer::isSpellContainer).stream().sorted(this::sortSpellbookSlot).forEach(slotResult -> initItem(slotResult.stack(), slotResult.slotContext().identifier())));
+        initCurioItems(player);
         initItem(player.getItemBySlot(EquipmentSlot.HEAD), EquipmentSlot.HEAD.getName());
         initItem(player.getItemBySlot(EquipmentSlot.CHEST), EquipmentSlot.CHEST.getName());
         initItem(player.getItemBySlot(EquipmentSlot.LEGS), EquipmentSlot.LEGS.getName());
@@ -83,6 +85,18 @@ public class SpellSelectionManager {
         }
     }
 
+    private void initCurioItems(Player player) {
+        CuriosApi.getCuriosInventory(player).ifPresent(inv -> {
+            ItemStack spellbook = Utils.getPlayerSpellbookStack(player);
+            if (spellbook != null) {
+                initItem(spellbook, Curios.SPELLBOOK_SLOT);
+            }
+            inv.findCurios(ISpellContainer::isSpellContainer).stream().filter(slot -> !slot.slotContext().identifier().equals(Curios.SPELLBOOK_SLOT)).forEach(
+                    slotResult -> initItem(slotResult.stack(), String.format("%s_%s", slotResult.slotContext().identifier(), slotResult.slotContext().index())));
+        });
+
+    }
+
     /**
      * Sorts curio initialization order to always put spellbooks first
      */
@@ -99,15 +113,46 @@ public class SpellSelectionManager {
                 var activeSpells = spellContainer.getActiveSpells();
                 for (int i = 0; i < activeSpells.size(); i++) {
                     var spellSlot = activeSpells.get(i);
-                    selectionOptionList.add(new SelectionOption(spellSlot.spellData(), equipmentSlot, i, selectionOptionList.size()));
-
+                    int globalIndex = addOrMergeSelectionOption(new SelectionOption(spellSlot.spellData(), equipmentSlot, i, selectionOptionList.size()));
                     if (spellSelection.index == i && spellSelection.equipmentSlot.equals(equipmentSlot)) {
-                        selectionIndex = selectionOptionList.size() - 1;
+                        selectionIndex = globalIndex;
                         selectionValid = true;
                     }
                 }
             }
         }
+    }
+
+    /**
+     * If the option is unique it will be appended to {@link this#selectionOptionList}. If the option already exists in {@link this#selectionOptionList}, the original option's stats will be updated (if applicable) and the duplicate option will not be added.
+     *
+     * @return global index spell is assigned
+     */
+    private int addOrMergeSelectionOption(SelectionOption option) {
+        SelectionOption existing = findExistingSpell(option.spellData.getSpell());
+        if (existing != null) {
+            if (option.spellData.getLevel() > existing.spellData.getLevel()) {
+                option.globalIndex = existing.globalIndex;
+                selectionOptionList.set(existing.globalIndex, option);
+                return existing.globalIndex;
+            }
+        } else {
+            selectionOptionList.add(option);
+            return selectionOptionList.size() - 1;
+        }
+        return -1;
+    }
+
+    /**
+     * @return SelectionOption inside {@link this#selectionOptionList} with matching spell, or null if not present
+     */
+    private @Nullable SelectionOption findExistingSpell(AbstractSpell spell) {
+        for (SelectionOption selectionOption : selectionOptionList) {
+            if (selectionOption.spellData.getSpell().equals(spell)) {
+                return selectionOption;
+            }
+        }
+        return null;
     }
 
     private void tryLastSelectionOrDefault() {
@@ -254,7 +299,8 @@ public class SpellSelectionManager {
         }
 
         public CastSource getCastSource() {
-            return this.slot.equals(Curios.SPELLBOOK_SLOT) ? CastSource.SPELLBOOK : CastSource.SWORD;
+            //todo: this paradigm is unreliable, cast source should be explicitly stored on the selection option
+            return this.slot.startsWith(Curios.SPELLBOOK_SLOT) ? CastSource.SPELLBOOK : CastSource.SWORD;
         }
     }
 

@@ -30,15 +30,16 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
 
-@AutoSpellConfig
 public class RaiseDeadSpell extends AbstractSpell {
     private final ResourceLocation spellId = ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "raise_dead");
     private final DefaultConfig defaultConfig = new DefaultConfig()
@@ -125,6 +126,10 @@ public class RaiseDeadSpell extends AbstractSpell {
                 equip(undead, equipment);
                 var yrot = 6.281f / count * i + entity.getYRot() * Mth.DEG_TO_RAD;
                 Vec3 spawn = Utils.moveToRelativeGroundLevel(world, entity.getEyePosition().add(new Vec3(radius * Mth.cos(yrot), 0, radius * Mth.sin(yrot))), 10);
+                spawn = world.clip(new ClipContext(entity.getEyePosition(), spawn, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, CollisionContext.empty())).getLocation();
+                if (!world.noCollision(undead.getBoundingBox().move(spawn))) {
+                    spawn = Utils.moveToRelativeGroundLevel(world, spawn.add(entity.getEyePosition().subtract(spawn).normalize().scale(entity.getBbWidth() * 1.1)), 3);
+                }
                 undead.setPos(spawn.x, spawn.y, spawn.z);
                 undead.setYRot(entity.getYRot());
                 undead.setOldPosAndRot();
@@ -151,6 +156,8 @@ public class RaiseDeadSpell extends AbstractSpell {
         mob.setDropChance(EquipmentSlot.LEGS, 0.0F);
         mob.setDropChance(EquipmentSlot.CHEST, 0.0F);
         mob.setDropChance(EquipmentSlot.HEAD, 0.0F);
+        mob.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        mob.setDropChance(EquipmentSlot.OFFHAND, 0.0F);
     }
 
     private ItemStack[] getEquipment(float power, RandomSource random) {

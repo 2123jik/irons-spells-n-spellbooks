@@ -83,6 +83,7 @@ public class PriestEntity extends NeutralWizard implements VillagerDataHolder, S
 
     @Override
     protected void registerGoals() {
+        this.goalSelector.addGoal(0, new FocusOnTradingPlayerGoal<>(this));
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(0, new OpenDoorGoal(this, true));
         this.goalSelector.addGoal(1, new GustDefenseGoal(this));
@@ -256,17 +257,7 @@ public class PriestEntity extends NeutralWizard implements VillagerDataHolder, S
 
     @Override
     protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
-//        if (!level.isClientSide) {
-//            pPlayer.sendSystemMessage(Component.literal(">Game Time: " + this.level.getGameTime()));
-//            pPlayer.sendSystemMessage(Component.literal(">Day Time: " + this.level.getDayTime()));
-//            pPlayer.sendSystemMessage(Component.literal(">Last Restock Game Time: " + this.lastRestockGameTime));
-//            pPlayer.sendSystemMessage(Component.literal(">Last Restock Day Time: " + this.lastRestockCheckDayTime));
-//            pPlayer.sendSystemMessage(Component.literal("delta game time: " + (this.level.getGameTime() - this.lastRestockGameTime)));
-//            pPlayer.sendSystemMessage(Component.literal("delta day time: " + (this.level.dayTime() - this.lastRestockCheckDayTime)));
-//            pPlayer.sendSystemMessage(Component.literal("restocks today: " + numberOfRestocksToday));
-//        }
-
-        boolean preventTrade = (!this.level.isClientSide && this.getOffers().isEmpty()) || this.getTarget() != null || isAngryAt(pPlayer);
+        boolean preventTrade = isAggressive() || (!this.level.isClientSide && this.getOffers().isEmpty());
         if (pHand == InteractionHand.MAIN_HAND) {
             if (preventTrade && !this.level.isClientSide) {
                 this.setUnhappy();
@@ -384,7 +375,7 @@ public class PriestEntity extends NeutralWizard implements VillagerDataHolder, S
 
             this.offers.removeIf(Objects::isNull);
             //We count the creation of our stock as a restock so that we do not immediately refresh trades the same day.
-            numberOfRestocksToday++;
+            setLastRestockGameTime(level.getGameTime());
         }
         return this.offers;
     }
@@ -393,11 +384,6 @@ public class PriestEntity extends NeutralWizard implements VillagerDataHolder, S
     public void overrideOffers(MerchantOffers pOffers) {
         //Not implemented by villagers. Might be only used client-side
         //TODO: anyscroll trades???
-    }
-
-    @Override
-    protected boolean isImmobile() {
-        return super.isImmobile() || isTrading();
     }
 
     @Override
@@ -426,7 +412,6 @@ public class PriestEntity extends NeutralWizard implements VillagerDataHolder, S
 
     private void startTrading(Player pPlayer) {
         this.setTradingPlayer(pPlayer);
-        this.lookControl.setLookAt(pPlayer);
         this.openTradingScreen(pPlayer, this.getDisplayName(), this.getVillagerData().getLevel());
     }
 

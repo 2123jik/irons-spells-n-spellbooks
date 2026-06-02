@@ -28,7 +28,6 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 import java.util.Optional;
 
-@AutoSpellConfig
 public class SonicBoomSpell extends AbstractSpell {
     private final ResourceLocation spellId = ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "sonic_boom");
     private final DefaultConfig defaultConfig = new DefaultConfig()
@@ -81,7 +80,7 @@ public class SonicBoomSpell extends AbstractSpell {
 
     @Override
     public void onCast(Level level, int spellLevel, LivingEntity entity, CastSource castSource, MagicData playerMagicData) {
-        CameraShakeManager.addCameraShake(new CameraShakeData(10, entity.position(), 20));
+        CameraShakeManager.addCameraShake(new CameraShakeData(level, 20, entity.position(), 20));
         var range = getRange(spellLevel, entity);
         Vec3 start = entity.getEyePosition();
         Vec3 end = start.add(entity.getForward().scale(range));

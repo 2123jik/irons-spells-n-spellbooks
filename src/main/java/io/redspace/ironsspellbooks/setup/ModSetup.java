@@ -25,8 +25,8 @@ public class ModSetup {
     }
 
     public static void init(FMLCommonSetupEvent event) {
-
-        CompatHandler.init();
-
+        event.enqueueWork(() -> {
+            CompatHandler.init();
+        });
     }
 }

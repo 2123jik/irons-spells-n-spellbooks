@@ -55,6 +55,10 @@ public interface IMerchantWizard extends Merchant {
         return getRestocksToday() == 0 && level().getGameTime() > getLastRestockGameTime() + 2400L;
     }
 
+    default void stopTrading() {
+        setTradingPlayer(null);
+    }
+
     default boolean shouldRestock() {
         /*
         Game time is persistent, Day Time not.
@@ -80,7 +84,6 @@ public interface IMerchantWizard extends Merchant {
 
         if (hasDayElapsed) {
             //update times
-            setLastRestockGameTime(currentGameTime);
             setLastRestockCheckDayTime(currentDayTime);
             setRestocksToday(0);
         }
@@ -92,6 +95,7 @@ public interface IMerchantWizard extends Merchant {
             offer.updateDemand();
             offer.resetUses();
         }
+        setLastRestockGameTime(level().getGameTime());
         this.setRestocksToday(getRestocksToday() + 1);
     }
 

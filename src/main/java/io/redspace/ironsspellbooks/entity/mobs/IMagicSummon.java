@@ -5,7 +5,6 @@ import io.redspace.ironsspellbooks.capabilities.magic.SummonManager;
 import io.redspace.ironsspellbooks.config.ServerConfigs;
 import io.redspace.ironsspellbooks.damage.DamageSources;
 import io.redspace.ironsspellbooks.effect.SummonTimer;
-import io.redspace.ironsspellbooks.mixin.EntityAccessor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket;
 import net.minecraft.server.level.ServerPlayer;
@@ -72,8 +71,9 @@ public interface IMagicSummon extends AntiMagicSusceptible {
         }
         var reason = entity.getRemovalReason();
         if (reason == null || reason == Entity.RemovalReason.UNLOADED_TO_CHUNK) {
+            // seems to cause undefined behavior, not entirely sure why. disabling for now, as im not sure what this was accomplishing anyways - summons are not persistent by default
             // Force unloaded summons to die
-            ((EntityAccessor) entity).setRemovalReason(Entity.RemovalReason.DISCARDED);
+//            ((EntityAccessor) entity).setRemovalReason(Entity.RemovalReason.DISCARDED);
         }
         if (reason == Entity.RemovalReason.DISCARDED) {
             if (this.getSummoner() instanceof ServerPlayer player) {

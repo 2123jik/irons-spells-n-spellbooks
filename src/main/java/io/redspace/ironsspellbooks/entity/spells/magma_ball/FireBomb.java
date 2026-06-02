@@ -19,6 +19,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
@@ -55,9 +56,9 @@ public class FireBomb extends AbstractMagicProjectile {
     }
 
     @Override
-    protected void onHit(HitResult hitresult) {
+    protected void onHit(@NotNull HitResult hitresult) {
         super.onHit(hitresult);
-        createFireField(hitresult.getLocation());
+        createFireField(Utils.moveToRelativeGroundLevel(level, hitresult.getLocation(), 2, 6));
         float explosionRadius = getExplosionRadius();
         var entities = level.getEntities(this, this.getBoundingBox().inflate(explosionRadius));
         for (Entity entity : entities) {
@@ -70,7 +71,7 @@ public class FireBomb extends AbstractMagicProjectile {
                 }
             }
         }
-        discard();
+        this.discardHelper(hitresult);
     }
 
     public void createFireField(Vec3 location) {

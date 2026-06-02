@@ -30,11 +30,19 @@ public class ModTags {
     public static final TagKey<Item> MITHRIL_INGOT = ItemTags.create(ResourceLocation.parse("c:ingots/mithril"));
     public static final TagKey<Item> CAN_BE_UPGRADED = ItemTags.create(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "upgrade_whitelist"));
     public static final TagKey<Item> CAN_BE_IMBUED = ItemTags.create(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "imbue_whitelist"));
+    public static final TagKey<Item> BASE_WIZARD_HELMET = ItemTags.create(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "wizard_base_helmet"));
+    public static final TagKey<Item> BASE_WIZARD_CHESTPLATE = ItemTags.create(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "wizard_base_chestplate"));
+    public static final TagKey<Item> BASE_WIZARD_LEGGINGS = ItemTags.create(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "wizard_base_leggings"));
+    public static final TagKey<Item> BASE_WIZARD_BOOTS = ItemTags.create(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "wizard_base_boots"));
+    public static final TagKey<Item> DEAD_KING_RESPAWNABLE = ItemTags.create(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "dead_king_respawnable"));
+    public static final TagKey<Item> SPELLBOOK_CURIO = ItemTags.create(ResourceLocation.fromNamespaceAndPath("curios", "spellbook"));
     public static final TagKey<Block> SPECTRAL_HAMMER_MINEABLE = BlockTags.create(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "spectral_hammer_mineable"));
     public static final TagKey<Block> GUARDED_BY_WIZARDS = BlockTags.create(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "guarded_by_wizards"));
     public static final TagKey<Block> PREVENT_POCKET_DIMENSION_PLACEMENT = BlockTags.create(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "pocket_dimension_prevent_placement"));
 
     public static final TagKey<MobEffect> CLEANSE_IMMUNE = TagKey.create(Registries.MOB_EFFECT, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "cleanse_immune"));
+    public static final TagKey<MobEffect> AFFECTED_BY_SPIDER_ASPECT = TagKey.create(Registries.MOB_EFFECT, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "affected_by_spider_aspect"));
+
     public static final TagKey<Structure> WAYWARD_COMPASS_LOCATOR = TagKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "wayward_compass_locator"));
 
     public static final TagKey<EntityType<?>> ALWAYS_HEAL = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "always_heal"));
@@ -43,6 +51,9 @@ public class ModTags {
     public static final TagKey<EntityType<?>> CANT_USE_PORTAL = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "cant_use_portal"));
     public static final TagKey<EntityType<?>> INFERNAL_ALLIES = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "infernal_allies"));
     public static final TagKey<EntityType<?>> GUIDING_BOLT_IMMUNE = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "guiding_bolt_immune"));
+    public static final TagKey<EntityType<?>> CANT_PRODUCE_BLOOD = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "cant_produce_blood"));
+    public static final TagKey<EntityType<?>> CANT_PARRY = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "cant_parry"));
+    public static final TagKey<EntityType<?>> CANT_RICOCHET = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "cant_ricochet"));
 
     public static final TagKey<Biome> ICE_SPIDER_PATROLS = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "ice_spider_patrols"));
 

@@ -1,26 +1,17 @@
 package io.redspace.ironsspellbooks.player;
 
-import dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration;
-import dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode;
-import dev.kosmx.playerAnim.api.layered.IAnimation;
-import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
-import dev.kosmx.playerAnim.api.layered.ModifierLayer;
-import dev.kosmx.playerAnim.api.layered.modifier.AbstractFadeModifier;
-import dev.kosmx.playerAnim.core.data.KeyframeAnimation;
-import dev.kosmx.playerAnim.core.util.Ease;
-import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess;
-import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationRegistry;
+import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.CastSource;
 import io.redspace.ironsspellbooks.api.spells.ICastData;
-import io.redspace.ironsspellbooks.api.spells.SpellAnimations;
 import io.redspace.ironsspellbooks.api.util.AnimationHolder;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.gui.EldritchResearchScreen;
 import io.redspace.ironsspellbooks.network.casting.CastErrorPacket;
 import io.redspace.ironsspellbooks.particle.BlastwaveParticleOptions;
 import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
-import io.redspace.ironsspellbooks.setup.IronsAdjustmentModifier;
+import io.redspace.ironsspellbooks.render.animation.AnimationHelper;
+import io.redspace.ironsspellbooks.spells.CastingMobAimingData;
 import io.redspace.ironsspellbooks.spells.ender.TeleportSpell;
 import io.redspace.ironsspellbooks.spells.holy.CloudOfRegenerationSpell;
 import io.redspace.ironsspellbooks.spells.holy.FortifySpell;
@@ -37,15 +28,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 import java.util.UUID;
-
-import static io.redspace.ironsspellbooks.config.ClientConfigs.SHOW_FIRST_PERSON_ARMS;
-import static io.redspace.ironsspellbooks.config.ClientConfigs.SHOW_FIRST_PERSON_ITEMS;
 
 public class ClientSpellCastHelper {
     /**
@@ -226,26 +215,27 @@ public class ClientSpellCastHelper {
             //Blastwave
             level.addParticle(new BlastwaveParticleOptions(new Vector3f(1, .6f, 0.3f), radius + 1), x, y, z, 0, 0, 0);
             //Billowing wave
-            int c = (int) (6.28 * radius) * 2;
+            int c = (int) (6.28 * radius) * 3;
             float step = 360f / c * Mth.DEG_TO_RAD;
-            float speed = (0.06f + 0.01f * radius) * 2;
+            float speed = (0.06f + 0.01f * radius) * 4f;
             for (int i = 0; i < c; i++) {
                 Vec3 vec3 = new Vec3(Mth.cos(step * i), 0, Mth.sin(step * i)).scale(speed);
-                Vec3 posOffset = Utils.getRandomVec3(.5f).add(vec3.scale(10));
+                Vec3 posOffset = Utils.getRandomVec3(.5f).add(vec3/*.scale(5)*/);
                 vec3 = vec3.add(Utils.getRandomVec3(0.01));
                 level.addParticle(ParticleHelper.FIERY_SMOKE, x + posOffset.x, y + posOffset.y, z + posOffset.z, vec3.x, vec3.y, vec3.z);
             }
             //Smoke Cloud
-            int cloudDensity = 50 + (int) (25 * radius);
+            int cloudDensity = 50 + (int) (25 * radius * Math.clamp(radius / 10, 1, 50));
             for (int i = 0; i < cloudDensity; i++) {
-                Vec3 posOffset = Utils.getRandomVec3(1).scale(radius * .125f);
+                Vec3 posOffset = Utils.getRandomVec3(1).scale(radius * .010f);
                 Vec3 motion = posOffset.normalize().scale(speed * .5f);
-                posOffset = posOffset.add(motion.scale(Utils.getRandomScaled(1)));
-                motion = motion.add(Utils.getRandomVec3(speed * .1f));
+                posOffset = posOffset.add(motion.scale(Utils.getRandomScaled(1)).normalize());
+                motion = motion.add(Utils.getRandomVec3(speed * .2f * (i + cloudDensity) / (float) cloudDensity));
                 level.addParticle(ParticleHelper.FIERY_SMOKE, x + posOffset.x, y + posOffset.y, z + posOffset.z, motion.x, motion.y, motion.z);
             }
+            int fireDensity = 50 + (int) (25 * radius);
             //Fire Cloud
-            for (int i = 0; i < cloudDensity; i += 2) {
+            for (int i = 0; i < fireDensity; i += 2) {
                 Vec3 posOffset = Utils.getRandomVec3(1).scale(radius * .4f);
                 Vec3 motion = posOffset.normalize().scale(speed * .5f);
                 motion = motion.add(Utils.getRandomVec3(0.25));
@@ -253,7 +243,7 @@ public class ClientSpellCastHelper {
                 level.addParticle(ParticleHelper.FIRE, x + posOffset.x * .5f, y + posOffset.y * .5f, z + posOffset.z * .5f, motion.x, motion.y, motion.z);
             }
             //Sparks
-            for (int i = 0; i < cloudDensity; i += 2) {
+            for (int i = 0; i < fireDensity; i += 2) {
                 Vec3 posOffset = Utils.getRandomVec3(radius).scale(.2f);
                 Vec3 motion = posOffset.normalize().scale(0.8);
                 motion = motion.add(Utils.getRandomVec3(0.18));
@@ -275,7 +265,7 @@ public class ClientSpellCastHelper {
     public static void handleClientBoundOnCastStarted(UUID castingEntityId, String spellId, int spellLevel) {
         var player = Minecraft.getInstance().player.level.getPlayerByUUID(castingEntityId);
         var spell = SpellRegistry.getSpell(spellId);
-        spell.getCastStartAnimation().getForPlayer().ifPresent((resourceLocation -> animatePlayerStart(player, resourceLocation)));
+        spell.getCastStartAnimation().getForPlayer().ifPresent((resourceLocation -> AnimationHelper.animatePlayerStart(player, resourceLocation)));
         spell.onClientPreCast(player.level, spellLevel, player, player.getUsedItemHand(), null);
     }
 
@@ -289,58 +279,36 @@ public class ClientSpellCastHelper {
         var finishAnimation = spell.getCastFinishAnimation();
 
         if (finishAnimation.getForPlayer().isPresent() && !cancelled) {
-            animatePlayerStart(player, finishAnimation.getForPlayer().get());
+            AnimationHelper.animatePlayerStart(player, finishAnimation.getForPlayer().get());
         } else if (finishAnimation != AnimationHolder.pass() || cancelled) {
-            var animation = (ModifierLayer<IAnimation>) PlayerAnimationAccess.getPlayerAssociatedData((AbstractClientPlayer) player).get(SpellAnimations.ANIMATION_RESOURCE);
-            if (animation != null) {
-                animation.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(4, Ease.INOUTSINE), null, false);
-                IronsAdjustmentModifier.INSTANCE.fadeOut(5);
-            }
+            AnimationHelper.cancelPlayerAnimation((AbstractClientPlayer) player);
         }
 
         if (cancelled && spell.stopSoundOnCancel()) {
             spell.getCastStartSound().ifPresent((soundEvent) -> Minecraft.getInstance().getSoundManager().stop(soundEvent.getLocation(), null));
         }
 
-        if (castingEntityId.equals(Minecraft.getInstance().player.getUUID()) && ClientInputEvents.isUseKeyDown) {
+        if (castingEntityId.equals(Minecraft.getInstance().player.getUUID()) && ClientInputEvents.isUseKeyDown()) {
             ClientInputEvents.hasReleasedSinceCasting = false;
         }
     }
 
     /**
-     * Animation Helper
+     * Use {@link AnimationHelper#animatePlayerStart(Player, ResourceLocation)} instead
      */
+    @Deprecated(forRemoval = true)
     public static void animatePlayerStart(Player player, ResourceLocation resourceLocation) {
-        var rawanimation = PlayerAnimationRegistry.getAnimation(resourceLocation);
-        if (rawanimation instanceof KeyframeAnimation keyframeAnimation) {
-            //noinspection unchecked
-            var playerAnimationData = (ModifierLayer<IAnimation>) PlayerAnimationAccess.getPlayerAssociatedData((AbstractClientPlayer) player).get(SpellAnimations.ANIMATION_RESOURCE);
-            if (playerAnimationData != null) {
-                var animation = new KeyframeAnimationPlayer(keyframeAnimation) {
-//                    @Override
-//                    public void stop() {
-//                        playerAnimationData.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease.INOUTSINE), null, false);
-//                        IronsAdjustmentModifier.INSTANCE.fadeOut(3);
-//                    }
+        AnimationHelper.animatePlayerStart(player, resourceLocation);
+    }
 
-                    @Override
-                    public void tick() {
-                        if (getCurrentTick() == getStopTick() - 2) {
-                            IronsAdjustmentModifier.INSTANCE.fadeOut(3);
-                        }
-                        super.tick();
-                    }
-                };
-                var armsFlag = SHOW_FIRST_PERSON_ARMS.get();
-                var itemsFlag = SHOW_FIRST_PERSON_ITEMS.get();
-                if (armsFlag || itemsFlag) {
-                    animation.setFirstPersonMode(FirstPersonMode.THIRD_PERSON_MODEL);
-                    animation.setFirstPersonConfiguration(new FirstPersonConfiguration(armsFlag, armsFlag, itemsFlag, itemsFlag));
-                } else {
-                    animation.setFirstPersonMode(FirstPersonMode.DISABLED);
-                }
-                playerAnimationData.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(2, Ease.INOUTSINE), animation, true);
-            }
+    public static void handleCastingMobAimingData(int entityId, CastingMobAimingData aimingData) {
+        var level = Minecraft.getInstance().level;
+        if (level == null) {
+            return;
+        }
+        var entity = level.getEntity(entityId);
+        if (entity instanceof LivingEntity livingEntity) {
+            MagicData.getPlayerMagicData(livingEntity).setAdditionalCastData(aimingData);
         }
     }
 }

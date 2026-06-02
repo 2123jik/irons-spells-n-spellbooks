@@ -100,7 +100,7 @@ public class EarthquakeAoe extends AoeEntity implements AntiMagicSusceptible {
             }
             if (waveAnim >= 0) {
                 var circumference = waveAnim * 2 * 3.14f;
-                int blocks = Mth.clamp((int) circumference, 0, 25);
+                int blocks = Mth.clamp((int) circumference, 0, 250);
                 float anglePerBlock = 360f / blocks;
                 for (int i = 0; i < blocks; i++) {
                     Vec3 vec3 = new Vec3(
@@ -135,7 +135,7 @@ public class EarthquakeAoe extends AoeEntity implements AntiMagicSusceptible {
 
     protected void createScreenShake() {
         if (!this.level.isClientSide && !this.isRemoved()) {
-            this.cameraShakeData = new CameraShakeData(this.duration - this.tickCount, this.position(), 15);
+            this.cameraShakeData = new CameraShakeData(level, this.duration - this.tickCount, this.position(), 15);
             CameraShakeManager.addCameraShake(cameraShakeData);
         }
     }

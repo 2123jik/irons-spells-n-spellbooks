@@ -5,12 +5,16 @@ import io.redspace.ironsspellbooks.api.config.DefaultConfig;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
 import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
 import io.redspace.ironsspellbooks.api.spells.*;
+import io.redspace.ironsspellbooks.api.util.RaycastBuilder;
 import io.redspace.ironsspellbooks.api.util.Utils;
+import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
 import io.redspace.ironsspellbooks.damage.DamageSources;
 import io.redspace.ironsspellbooks.damage.SpellDamageSource;
+import io.redspace.ironsspellbooks.network.casting.SyncCastingMobAimingDataPacket;
 import io.redspace.ironsspellbooks.network.particles.BloodSiphonParticlesPacket;
 import io.redspace.ironsspellbooks.registries.SoundRegistry;
 import io.redspace.ironsspellbooks.spells.CastingMobAimingData;
+import io.redspace.ironsspellbooks.util.ParticleHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -28,7 +32,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-@AutoSpellConfig
 public class RayOfSiphoningSpell extends AbstractSpell {
     private final ResourceLocation spellId = ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "ray_of_siphoning");
     private final DefaultConfig defaultConfig = new DefaultConfig()
@@ -85,11 +88,12 @@ public class RayOfSiphoningSpell extends AbstractSpell {
     @Override
     public void onServerCastTick(Level level, int spellLevel, LivingEntity entity, @Nullable MagicData playerMagicData) {
         super.onServerCastTick(level, spellLevel, entity, playerMagicData);
-        if (playerMagicData.getAdditionalCastData() instanceof CastingMobAimingData aimData && entity instanceof Mob mob) {
+        if (playerMagicData != null && playerMagicData.getAdditionalCastData() instanceof CastingMobAimingData aimData && entity instanceof Mob mob) {
             var target = mob.getTarget();
             if (target != null) {
                 aimData.updateAim(target, .15f);
             }
+            PacketDistributor.sendToPlayersTrackingEntity(entity, new SyncCastingMobAimingDataPacket(entity.getId(), aimData));
         }
     }
 
@@ -99,10 +103,17 @@ public class RayOfSiphoningSpell extends AbstractSpell {
         if (playerMagicData.getAdditionalCastData() instanceof CastingMobAimingData aimData && entity instanceof Mob mob) {
             forward = aimData.getForward(entity);
         }
-        var hitResult = Utils.raycastForEntity(level, entity, entity.getEyePosition(), entity.getEyePosition().add(forward.scale(getRange(spellLevel))), true, .15f, Utils::canHitWithRaycast);
+        var hitResult = RaycastBuilder.begin(level, entity)
+                .start(entity.getEyePosition())
+                .end(entity.getEyePosition().add(forward.scale(getRange(spellLevel))))
+                .checkForBlocks(true)
+                .bbInflation(.15f)
+                .filter(Utils::canHitWithRaycast)
+                .build();
+
         if (hitResult.getType() == HitResult.Type.ENTITY) {
             Entity target = ((EntityHitResult) hitResult).getEntity();
-            if (target instanceof LivingEntity) {
+            if (target.canBeHitByProjectile()) {
                 if (DamageSources.applyDamage(target, getTickDamage(spellLevel, entity), getDamageSource(entity))) {
                     PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new BloodSiphonParticlesPacket(target.position().add(0, target.getBbHeight() / 2, 0), entity.position().add(0, entity.getBbHeight() / 2, 0)));
                 }
@@ -113,7 +124,7 @@ public class RayOfSiphoningSpell extends AbstractSpell {
 
     @Override
     public SpellDamageSource getDamageSource(@Nullable Entity projectile, Entity attacker) {
-        return super.getDamageSource(projectile, attacker).setLifestealPercent(1f);
+        return super.getDamageSource(projectile, attacker).setLifestealPercent(1f).indirect();
     }
 
     public static float getRange(int level) {

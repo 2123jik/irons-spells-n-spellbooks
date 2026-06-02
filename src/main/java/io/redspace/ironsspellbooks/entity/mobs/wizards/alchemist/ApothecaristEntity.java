@@ -7,6 +7,7 @@ import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.AbstractSpellCastingMob;
 import io.redspace.ironsspellbooks.entity.mobs.abstract_spell_casting_mob.NeutralWizard;
 import io.redspace.ironsspellbooks.entity.mobs.goals.AlchemistAttackGoal;
+import io.redspace.ironsspellbooks.entity.mobs.goals.FocusOnTradingPlayerGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.PatrolNearLocationGoal;
 import io.redspace.ironsspellbooks.entity.mobs.goals.WizardRecoverGoal;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.IMerchantWizard;
@@ -37,6 +38,7 @@ import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.monster.piglin.PiglinAi;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
@@ -58,6 +60,7 @@ public class ApothecaristEntity extends NeutralWizard implements IMerchantWizard
 
     @Override
     protected void registerGoals() {
+        this.goalSelector.addGoal(0, new FocusOnTradingPlayerGoal<>(this));
         this.goalSelector.addGoal(1, new FloatGoal(this));
         this.goalSelector.addGoal(2, new AlchemistAttackGoal(this, 1.25f, 30, 70, 12, 0.5f)
                 .setSpells(
@@ -163,12 +166,7 @@ public class ApothecaristEntity extends NeutralWizard implements IMerchantWizard
 
     @Override
     protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
-        boolean preventTrade =(!this.level.isClientSide && this.getOffers().isEmpty()) || this.getTarget() != null || isAngryAt(pPlayer);
-        if (pHand == InteractionHand.MAIN_HAND) {
-            if (preventTrade && !this.level.isClientSide) {
-                //this.setUnhappy();
-            }
-        }
+        boolean preventTrade = isAggressive() || (!this.level.isClientSide && this.getOffers().isEmpty());
         if (!preventTrade) {
             if (!this.level.isClientSide && !this.getOffers().isEmpty()) {
                 if (shouldRestock()) {
@@ -183,7 +181,6 @@ public class ApothecaristEntity extends NeutralWizard implements IMerchantWizard
 
     private void startTrading(Player pPlayer) {
         this.setTradingPlayer(pPlayer);
-        this.lookControl.setLookAt(pPlayer);
         this.openTradingScreen(pPlayer, this.getDisplayName(), 0);
     }
 
@@ -259,7 +256,6 @@ public class ApothecaristEntity extends NeutralWizard implements IMerchantWizard
             if (this.random.nextFloat() < .65f) {
                 this.offers.add(new AdditionalWanderingTrades.RandomScrollTrade(new SpellFilter(SchoolRegistry.NATURE.get()), .5f, .9f).getOffer(this, this.random));
             }
-
             this.offers.add(new MerchantOffer(
                     new ItemCost(Items.EMERALD, 16),
                     Optional.empty(),
@@ -269,10 +265,20 @@ public class ApothecaristEntity extends NeutralWizard implements IMerchantWizard
                     5,
                     0.01f
             ));
+            Item greaterElixir = List.of(ItemRegistry.GREATER_EVASION_ELIXIR, ItemRegistry.GREATER_OAKSKIN_ELIXIR, ItemRegistry.GREATER_INVISIBILITY_ELIXIR, ItemRegistry.GREATER_HEALING_POTION).get(random.nextInt(4)).get();
+            this.offers.add(new MerchantOffer(
+                    new ItemCost(greaterElixir, 4),
+                    Optional.empty(),
+                    ItemRegistry.NATURE_RUNE.get().getDefaultInstance(),
+                    0,
+                    1,
+                    5,
+                    0.1f
+            ));
             this.offers.removeIf(Objects::isNull);
 
             //We count the creation of our stock as a restock so that we do not immediately refresh trades the same day.
-            numberOfRestocksToday++;
+            setLastRestockGameTime(level.getGameTime());
         }
         return this.offers;
     }
@@ -444,11 +450,6 @@ public class ApothecaristEntity extends NeutralWizard implements IMerchantWizard
     @Override
     public int getAmbientSoundInterval() {
         return 200;
-    }
-
-    @Override
-    protected boolean isImmobile() {
-        return super.isImmobile() || isTrading();
     }
 
     @Override

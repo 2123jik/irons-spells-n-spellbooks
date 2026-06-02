@@ -15,10 +15,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -73,8 +71,8 @@ public class FireEruptionAoe extends AoeEntity {
                 }
                 var circumferenceMin = (waveAnim - 1) * 2 * 3.14f;
                 var circumferenceMax = (waveAnim + 1) * 2 * 3.14f;
-                int minBlocks = Mth.clamp((int) circumferenceMin, 0, 60);
-                int maxBlocks = Mth.clamp((int) circumferenceMax, 0, 60);
+                int minBlocks = Mth.clamp((int) circumferenceMin, 0, 750);
+                int maxBlocks = Mth.clamp((int) circumferenceMax, 0, 750);
                 float anglePerBlockMin = 360f / minBlocks;
                 float anglePerBlockMax = 360f / maxBlocks;
                 //block trail
@@ -89,14 +87,18 @@ public class FireEruptionAoe extends AoeEntity {
                 }
                 //fire trail
                 for (int i = 0; i < maxBlocks; i++) {
+                    if (random.nextFloat() < 0.25f) {
+                        // reduce density of fire for better visual clarity
+                        continue;
+                    }
                     Vec3 vec3 = new Vec3(
                             (waveAnim + 1) * Mth.cos(anglePerBlockMax * i),
                             0,
                             (waveAnim + 1) * Mth.sin(anglePerBlockMax * i)
                     );
-                    BlockPos blockPos = BlockPos.containing(Utils.moveToRelativeGroundLevel(level, position().add(vec3), 4).add(0, 0.1, 0));
+                    BlockPos blockPos = BlockPos.containing(Utils.moveToRelativeGroundLevel(level, position().add(vec3), 4)).above();
                     if (level.getBlockState(blockPos.below()).isFaceSturdy(level, blockPos.below(), Direction.UP)) {
-                        Utils.createTremorBlockWithState(level, Blocks.FIRE.defaultBlockState(), blockPos, .1f + random.nextFloat() * .2f);
+                        Utils.createTremorBlockWithState(level, Blocks.FIRE.defaultBlockState(), blockPos.below(), .1f + random.nextFloat() * .2f);
                     }
                 }
                 List<LivingEntity> targets = this.level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(this.getInflation().x, this.getInflation().y, this.getInflation().z));
@@ -139,7 +141,7 @@ public class FireEruptionAoe extends AoeEntity {
 
     @Override
     protected boolean canHitTargetForGroundContext(LivingEntity target) {
-        return Utils.raycastForBlock(target.level, target.position(), target.position().add(0, -1, 0), ClipContext.Fluid.NONE).getType() != HitResult.Type.MISS;
+        return !level.noCollision(target.getBoundingBox().move(new Vec3(0, -.9999, 0)));
     }
 
     @Override

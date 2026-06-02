@@ -1,14 +1,15 @@
 package io.redspace.ironsspellbooks.datagen;
 
-import io.redspace.ironsspellbooks.IronsSpellbooks;
+import io.redspace.ironsspellbooks.api.registry.SchoolRegistry;
+import io.redspace.ironsspellbooks.api.spells.SchoolType;
 import io.redspace.ironsspellbooks.fluids.PotionFluid;
-import io.redspace.ironsspellbooks.recipe_types.NoAdditionSmithingTransformRecipe;
 import io.redspace.ironsspellbooks.recipe_types.alchemist_cauldron.BrewAlchemistCauldronRecipe;
 import io.redspace.ironsspellbooks.recipe_types.alchemist_cauldron.EmptyAlchemistCauldronRecipe;
 import io.redspace.ironsspellbooks.recipe_types.alchemist_cauldron.FillAlchemistCauldronRecipe;
 import io.redspace.ironsspellbooks.registries.FluidRegistry;
 import io.redspace.ironsspellbooks.registries.ItemRegistry;
 import io.redspace.ironsspellbooks.registries.PotionRegistry;
+import io.redspace.ironsspellbooks.util.ModTags;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -16,6 +17,7 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -50,14 +52,26 @@ public class IronRecipeProvider extends RecipeProvider {
         simpleRingSalvageRecipe(recipeOutput, ItemRegistry.EXPULSION_RING.get(), Ingredient.of(Items.WIND_CHARGE));
         simpleRingSalvageRecipe(recipeOutput, ItemRegistry.VISIBILITY_RING.get(), Ingredient.of(Items.SPYGLASS));
 
-        schoolArmorSmithing(recipeOutput, IronsSpellbooks.MODID, "fire","pyromancer");
-        schoolArmorSmithing(recipeOutput, IronsSpellbooks.MODID, "ice","cryomancer");
-        schoolArmorSmithing(recipeOutput, IronsSpellbooks.MODID, "lightning","electromancer");
-        schoolArmorSmithing(recipeOutput, IronsSpellbooks.MODID, "holy","priest");
-        schoolArmorSmithing(recipeOutput, IronsSpellbooks.MODID, "blood","cultist");
-        schoolArmorSmithing(recipeOutput, IronsSpellbooks.MODID, "ender","shadowwalker");
-        schoolArmorSmithing(recipeOutput, IronsSpellbooks.MODID, "evocation","archevoker");
-        schoolArmorSmithing(recipeOutput, IronsSpellbooks.MODID, "nature","plagued");
+        schoolArmorSmithing(recipeOutput, SchoolRegistry.FIRE.get(), "pyromancer");
+        schoolArmorSmithing(recipeOutput, SchoolRegistry.ICE.get(), "cryomancer");
+        schoolArmorSmithing(recipeOutput, SchoolRegistry.LIGHTNING.get(), "electromancer");
+        schoolArmorSmithing(recipeOutput, SchoolRegistry.HOLY.get(), "priest");
+        schoolArmorSmithing(recipeOutput, SchoolRegistry.BLOOD.get(), "cultist");
+        schoolArmorSmithing(recipeOutput, SchoolRegistry.ENDER.get(), "shadowwalker");
+        schoolArmorSmithing(recipeOutput, SchoolRegistry.EVOCATION.get(), "archevoker");
+        schoolArmorSmithing(recipeOutput, SchoolRegistry.NATURE.get(), "plagued");
+
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.FIRE_RUNE.get(), ItemRegistry.FIRE_UPGRADE_ORB.get());
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.ICE_RUNE.get(), ItemRegistry.ICE_UPGRADE_ORB.get());
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.LIGHTNING_RUNE.get(), ItemRegistry.LIGHTNING_UPGRADE_ORB.get());
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.EVOCATION_RUNE.get(), ItemRegistry.EVOCATION_UPGRADE_ORB.get());
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.HOLY_RUNE.get(), ItemRegistry.HOLY_UPGRADE_ORB.get());
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.ENDER_RUNE.get(), ItemRegistry.ENDER_UPGRADE_ORB.get());
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.BLOOD_RUNE.get(), ItemRegistry.BLOOD_UPGRADE_ORB.get());
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.NATURE_RUNE.get(), ItemRegistry.NATURE_UPGRADE_ORB.get());
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.COOLDOWN_RUNE.get(), ItemRegistry.COOLDOWN_UPGRADE_ORB.get());
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.PROTECTION_RUNE.get(), ItemRegistry.PROTECTION_UPGRADE_ORB.get());
+        upgradeOrbRecipe(recipeOutput, ItemRegistry.MANA_RUNE.get(), ItemRegistry.MANA_UPGRADE_ORB.get());
 
         cauldronBottledInteraction(recipeOutput, ItemRegistry.BLOOD_VIAL, FluidRegistry.BLOOD);
         cauldronBottledInteraction(recipeOutput, ItemRegistry.INK_COMMON, FluidRegistry.COMMON_INK);
@@ -74,8 +88,12 @@ public class IronRecipeProvider extends RecipeProvider {
         cauldronBottledInteraction(recipeOutput, ItemRegistry.GREATER_HEALING_POTION, FluidRegistry.GREATER_HEALING_ELIXIR_FLUID);
         cauldronBottledInteraction(recipeOutput, ItemRegistry.TIMELESS_SLURRY, FluidRegistry.TIMELESS_SLURRY_FLUID);
         cauldronBottledInteraction(recipeOutput, ItemRegistry.ICE_VENOM_VIAL, FluidRegistry.ICE_VENOM_FLUID);
+        //todo: reimplement ice spider lure mechanics
+//        cauldronBottledInteraction(recipeOutput, ItemRegistry.ICE_SPIDER_PHEROMONES, FluidRegistry.ICE_SPIDER_PHEROMONE_FLUID);
 
         // fixme: modded buckets, even with water, wont work
+        //  update: is this what the #c:buckets/water tag is for?
+        //          not sure how to return the correct bucket after the fact
         new FillAlchemistCauldronRecipe.Builder()
                 .withInput(Items.WATER_BUCKET)
                 .withReturnItem(Items.BUCKET)
@@ -180,6 +198,12 @@ public class IronRecipeProvider extends RecipeProvider {
                 .withReagent(ItemRegistry.ICY_FANG.get())
                 .withResult(FluidRegistry.ICE_VENOM_FLUID, 250)
                 .save(recipeOutput);
+        //todo: reimplement ice spider lure mechanics
+//        BrewAlchemistCauldronRecipe.builder()
+//                .withInput(new FluidStack(FluidRegistry.ICE_VENOM_FLUID, 250))
+//                .withReagent(Items.PORKCHOP)
+//                .withResult(FluidRegistry.ICE_SPIDER_PHEROMONE_FLUID, 1000)
+//                .save(recipeOutput);
 
 
     }
@@ -187,25 +211,46 @@ public class IronRecipeProvider extends RecipeProvider {
     /**
      * creates smithing recipe for school rune + wizard armor = school armor, for boots, leggings, chestplate, helmet
      */
-    public static void schoolArmorSmithing(RecipeOutput output, String modid, String school, String armorName) {
-        var armors = new Item[]{ItemRegistry.WIZARD_BOOTS.get(), ItemRegistry.WIZARD_LEGGINGS.get(), ItemRegistry.WIZARD_CHESTPLATE.get(), ItemRegistry.WIZARD_HELMET.get()};
+    public static void schoolArmorSmithing(RecipeOutput output, SchoolType school, String armorName) {
+        var base = new TagKey<?>[]{ModTags.BASE_WIZARD_BOOTS, ModTags.BASE_WIZARD_LEGGINGS, ModTags.BASE_WIZARD_CHESTPLATE, ModTags.BASE_WIZARD_HELMET};
+        var slots = new ArmorItem.Type[]{ArmorItem.Type.BOOTS, ArmorItem.Type.LEGGINGS, ArmorItem.Type.CHESTPLATE, ArmorItem.Type.HELMET};
+//        var armors = new Item[]{ItemRegistry.WIZARD_BOOTS.get(), ItemRegistry.WIZARD_LEGGINGS.get(), ItemRegistry.WIZARD_CHESTPLATE.get(), ItemRegistry.WIZARD_HELMET.get()};
 //        var slots = new ArmorItem.Type[]{ArmorItem.Type.BOOTS, ArmorItem.Type.LEGGINGS, ArmorItem.Type.CHESTPLATE, ArmorItem.Type.HELMET};
-        for (Item baseArmor : armors) {
-            ResourceLocation itemId = ResourceLocation.fromNamespaceAndPath(modid, String.format("%s_%s", armorName, ((ArmorItem) baseArmor).getType().getName()));
-            Item rune = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(modid, String.format("%s_rune",school)));
+        ResourceLocation schoolId = SchoolRegistry.REGISTRY.getKey(school);
+        for (int i = 0; i < 4; i++) {
+            var tag = (TagKey<Item>) base[i];
+            Ingredient baseArmor = Ingredient.of(tag);
+//            if (baseArmor.hasNoItems()) continue;
+//            Item armorItem = baseArmor.getItems()[0].getItem();
+            ResourceLocation itemId = ResourceLocation.fromNamespaceAndPath(schoolId.getNamespace(), String.format("%s_%s", armorName, slots[i].getName()));
+            Item rune = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(schoolId.getNamespace(), String.format("%s_rune", schoolId.getPath())));
             ItemStack result = BuiltInRegistries.ITEM.get(itemId).getDefaultInstance();
             Item essence = ItemRegistry.ARCANE_ESSENCE.get();
             output.accept(itemId.withSuffix("_smithing"),
-                    new SmithingTransformRecipe(Ingredient.of(rune), Ingredient.of(baseArmor), Ingredient.of(essence), result),
+                    new SmithingTransformRecipe(Ingredient.of(rune), baseArmor, Ingredient.of(essence), result),
                     null
             );
             ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, result)
                     .requires(baseArmor)
                     .requires(rune)
                     .requires(essence)
-                    .unlockedBy("unlocked", has(baseArmor))
+                    .unlockedBy("unlocked", has(tag))
                     .save(output, itemId.withSuffix("_crafting"));
         }
+    }
+
+    /**
+     * creates smithing recipe for school rune + wizard armor = school armor, for boots, leggings, chestplate, helmet
+     */
+    public static void upgradeOrbRecipe(RecipeOutput output, Item rune, Item result) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, result)
+                .define('R', rune)
+                .define('O', ItemRegistry.UPGRADE_ORB.get())
+                .pattern("RRR")
+                .pattern("ROR")
+                .pattern("RRR")
+                .unlockedBy("orb", has(ItemRegistry.UPGRADE_ORB.get()))
+                .save(output);
     }
 
     /**

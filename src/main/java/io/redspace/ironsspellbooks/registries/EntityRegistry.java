@@ -5,6 +5,8 @@ import io.redspace.ironsspellbooks.entity.VisualFallingBlockEntity;
 import io.redspace.ironsspellbooks.entity.mobs.*;
 import io.redspace.ironsspellbooks.entity.mobs.dead_king_boss.DeadKingBoss;
 import io.redspace.ironsspellbooks.entity.mobs.dead_king_boss.DeadKingCorpseEntity;
+import io.redspace.ironsspellbooks.entity.mobs.dead_king_boss.DeadKingSoulEntity;
+import io.redspace.ironsspellbooks.entity.mobs.dead_king_boss.undead_spawner.UndeadRiftEntity;
 import io.redspace.ironsspellbooks.entity.mobs.debug_wizard.DebugWizard;
 import io.redspace.ironsspellbooks.entity.mobs.frozen_humanoid.FrozenHumanoid;
 import io.redspace.ironsspellbooks.entity.mobs.ice_spider.IceSpiderEntity;
@@ -16,6 +18,7 @@ import io.redspace.ironsspellbooks.entity.mobs.wizards.cryomancer.CryomancerEnti
 import io.redspace.ironsspellbooks.entity.mobs.wizards.cultist.CultistEntity;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.cursed_armor_stand.CursedArmorStandEntity;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.FireBossEntity;
+import io.redspace.ironsspellbooks.entity.mobs.wizards.fire_boss.fire_orb.OminousFireOrbEntity;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.priest.PriestEntity;
 import io.redspace.ironsspellbooks.entity.mobs.wizards.pyromancer.PyromancerEntity;
 import io.redspace.ironsspellbooks.entity.spells.*;
@@ -67,6 +70,7 @@ import io.redspace.ironsspellbooks.entity.spells.summoned_weapons.SummonedRapier
 import io.redspace.ironsspellbooks.entity.spells.summoned_weapons.SummonedSwordEntity;
 import io.redspace.ironsspellbooks.entity.spells.sunbeam.SunbeamEntity;
 import io.redspace.ironsspellbooks.entity.spells.target_area.TargetedAreaEntity;
+import io.redspace.ironsspellbooks.entity.spells.thrown_item.ThrownItemProjectile;
 import io.redspace.ironsspellbooks.entity.spells.thrown_spear.ThrownSpear;
 import io.redspace.ironsspellbooks.entity.spells.thunderstep.ThunderstepProjectile;
 import io.redspace.ironsspellbooks.entity.spells.void_tentacle.VoidTentacle;
@@ -106,6 +110,12 @@ public class EntityRegistry {
                     .sized(.5f, .5f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "magic_missile").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ThrownItemProjectile>> THROWN_ITEM =
+            ENTITIES.register("thrown_item", () -> EntityType.Builder.<ThrownItemProjectile>of(ThrownItemProjectile::new, MobCategory.MISC)
+                    .sized(.5f, .5f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "thrown_item").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<ConeOfColdProjectile>> CONE_OF_COLD_PROJECTILE =
             ENTITIES.register("cone_of_cold", () -> EntityType.Builder.<ConeOfColdProjectile>of(ConeOfColdProjectile::new, MobCategory.MISC)
@@ -270,6 +280,12 @@ public class EntityRegistry {
                     .sized(1.5f, .95f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "dead_king_corpse").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<DeadKingSoulEntity>> DEAD_KING_SOUL =
+            ENTITIES.register("dead_king_soul", () -> EntityType.Builder.<DeadKingSoulEntity>of(DeadKingSoulEntity::new, MobCategory.MISC)
+                    .sized(0.5f, 0.5f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "dead_king_soul").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<CatacombsZombie>> CATACOMBS_ZOMBIE =
             ENTITIES.register("catacombs_zombie", () -> EntityType.Builder.<CatacombsZombie>of(CatacombsZombie::new, MobCategory.MONSTER)
@@ -610,5 +626,24 @@ public class EntityRegistry {
                     .sized(0.5f, 0.5f)
                     .clientTrackingRange(64)
                     .build(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "spear").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<OminousFireOrbEntity>> OMINOUS_FIRE_ORB =
+            ENTITIES.register("ominous_fire_orb", () -> EntityType.Builder.<OminousFireOrbEntity>of(OminousFireOrbEntity::new, MobCategory.MISC)
+                    .sized(1.2f, 2.6f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "ominous_fire_orb").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<UndeadRiftEntity>> UNDEAD_RIFT =
+            ENTITIES.register("undead_rift", () -> EntityType.Builder.<UndeadRiftEntity>of(UndeadRiftEntity::new, MobCategory.MISC)
+                    .sized(.8f, 2f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "undead_rift").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<FangSwirlEntity>> FANG_SWIRL =
+            ENTITIES.register("fang_swirl", () -> EntityType.Builder.<FangSwirlEntity>of(FangSwirlEntity::new, MobCategory.MISC)
+                    .sized(4f, .8f)
+                    .clientTrackingRange(64)
+                    .build(ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "fang_swirl").toString()));
+
 }
 

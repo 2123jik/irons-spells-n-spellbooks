@@ -19,6 +19,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
@@ -81,7 +82,7 @@ public class CreeperHeadProjectile extends AbstractMagicProjectile {
     }
 
     @Override
-    protected void onHit(HitResult hitResult) {
+    protected void onHit(@NotNull HitResult hitResult) {
         if (!this.level().isClientSide) {
             var entities = level().getEntities(this, this.getBoundingBox().inflate(explosionRadius));
             for (Entity entity : entities) {
@@ -104,7 +105,7 @@ public class CreeperHeadProjectile extends AbstractMagicProjectile {
             MagicManager.spawnParticles(level, ParticleTypes.EXPLOSION, x, y, z, 3, 0.1, 0.1, 0.1, 0.3, true);
             MagicManager.spawnParticles(level, new BlastwaveParticleOptions(1, 1, 1, explosionRadius * 1.2f), x, y, z, 1, 0, 0, 0, 0, true);
             this.playSound(SoundEvents.GENERIC_EXPLODE.value(), 3, Utils.random.nextFloat() * .2f + .9f);
-            this.discard();
+            this.discardHelper(hitResult);
         }
     }
 

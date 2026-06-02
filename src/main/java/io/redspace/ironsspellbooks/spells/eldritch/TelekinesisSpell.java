@@ -29,7 +29,6 @@ import org.joml.Vector3f;
 import java.util.List;
 import java.util.Optional;
 
-@AutoSpellConfig
 public class TelekinesisSpell extends AbstractSpell {
     private final ResourceLocation spellId = ResourceLocation.fromNamespaceAndPath(IronsSpellbooks.MODID, "telekinesis");
 
@@ -160,6 +159,6 @@ public class TelekinesisSpell extends AbstractSpell {
 
     @Override
     public AnimationHolder getCastStartAnimation() {
-        return SpellAnimations.SELF_CAST_ANIMATION;
+        return SpellAnimations.ANIMATION_CONTINUOUS_CAST_ONE_HANDED;
     }
 }

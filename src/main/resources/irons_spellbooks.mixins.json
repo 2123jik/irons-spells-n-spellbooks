@@ -8,6 +8,7 @@
     "BeardifierMixin",
     "Compat$apothic_attributes$AttributeHandler",
     "CreeperMixin",
+    "CurioHooksMixin",
     "DispenserBlockMixin",
     "EntityAccessor",
     "EntityMixin",
@@ -15,6 +16,7 @@
     "ItemMixin",
     "ItemStackMixin",
     "LecternBlockEntityMixin",
+    "LevelMixin",
     "LivingEntityAccessor",
     "LivingEntityMixin",
     "MobEffectMixin",
@@ -22,7 +24,8 @@
     "NoiseChunkMixin",
     "PlayerMixin",
     "SmithingRecipeMixin",
-    "TridentItemMixin"
+    "TridentItemMixin",
+    "VaultServerDataAccessor"
   ],
   "client": [
     "ClientBookAccessMixin",
@@ -31,8 +34,10 @@
     "GuiMixin",
     "LecternRendererMixin",
     "MinecraftMixin",
+    "ParticleAccessor",
     "ParticleMixin",
     "SimpleTextureMixin",
+    "SpellParticleProviderMixin",
     "SpinAttackEffectLayerMixin"
   ],
   "injectors": {

@@ -538,11 +538,6 @@
       "irons_spellbooks:lightning_shockwave_cast"
     ]
   },
-  "entity.dead_king.music.drum_loop": {
-    "sounds": [
-      "irons_spellbooks:dead_king/music/drums"
-    ]
-  },
   "entity.dead_king.ambience": {
     "sounds": [
       "irons_spellbooks:dead_king/ambience"
@@ -571,11 +566,6 @@
   "entity.dead_king.music.suspense": {
     "sounds": [
       "irons_spellbooks:dead_king/music/suspense"
-    ]
-  },
-  "entity.dead_king.music.finale": {
-    "sounds": [
-      "irons_spellbooks:dead_king/music/finale"
     ]
   },
   "entity.generic.trader.no": {
@@ -633,6 +623,11 @@
   "music.flame_still_burns": {
     "sounds": [
       "irons_spellbooks:music/music_disc_flame_still_burns"
+    ]
+  },
+  "music.whispers_of_ice": {
+    "sounds": [
+      "irons_spellbooks:music/music_disc_whispers_of_ice"
     ]
   },
   "entity.sunbeam.windup": {
@@ -854,6 +849,26 @@
   "item.spear.channeling_strike": {
     "sounds": [
       "irons_spellbooks:lightning_spear_strike"
+    ]
+  },
+  "spell.shadow_slash.cast": {
+    "sounds": [
+      "irons_spellbooks:shadow_slash"
+    ]
+  },
+  "entity.generic.throw_dagger": {
+    "sounds": [
+      "irons_spellbooks:throw_dagger"
+    ]
+  },
+  "spell.soulfire_ray.cast": {
+    "sounds": [
+      "irons_spellbooks:soulfire_ray_shoot"
+    ]
+  },
+  "spell.soulfire_ray.charge": {
+    "sounds": [
+      "irons_spellbooks:soulfire_ray_charge"
     ]
   }
 }

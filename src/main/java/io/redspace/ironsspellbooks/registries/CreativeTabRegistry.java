@@ -4,7 +4,6 @@ import io.redspace.ironsspellbooks.IronsSpellbooks;
 import io.redspace.ironsspellbooks.api.registry.SpellRegistry;
 import io.redspace.ironsspellbooks.api.spells.ISpellContainer;
 import io.redspace.ironsspellbooks.item.FurledMapItem;
-import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -114,7 +113,7 @@ public class CreativeTabRegistry {
                 entries.accept(ItemRegistry.NETHERITE_MAGE_LEGGINGS.get());
                 entries.accept(ItemRegistry.NETHERITE_MAGE_BOOTS.get());
                 entries.accept(ItemRegistry.WIZARD_HELMET.get());
-                entries.accept(new ItemStack(ItemRegistry.WIZARD_HELMET, 1, DataComponentPatch.builder().set(ComponentRegistry.CLOTHING_VARIANT.get(), "hat").build()));
+                entries.accept(ItemRegistry.WIZARD_HAT.get());
                 entries.accept(ItemRegistry.WIZARD_CHESTPLATE.get());
                 entries.accept(ItemRegistry.WIZARD_LEGGINGS.get());
                 entries.accept(ItemRegistry.WIZARD_BOOTS.get());
@@ -142,6 +141,7 @@ public class CreativeTabRegistry {
                 entries.accept(ItemRegistry.VISIBILITY_RING.get());
                 entries.accept(ItemRegistry.TELEPORTATION_AMULET.get());
                 entries.accept(ItemRegistry.SIGNET_OF_THE_BETRAYER.get());
+                entries.accept(ItemRegistry.WICKED_BONE_RING.get());
                 entries.accept(ItemRegistry.INVISIBILITY_RING.get());
 
             })
@@ -185,6 +185,7 @@ public class CreativeTabRegistry {
                 entries.accept(ItemRegistry.ARCANE_ESSENCE.get());
                 entries.accept(ItemRegistry.RUINED_BOOK.get());
                 entries.accept(ItemRegistry.CHAINED_BOOK.get());
+                entries.accept(ItemRegistry.THE_CHRONICLE.get());
                 entries.accept(ItemRegistry.CINDER_ESSENCE.get());
                 entries.accept(ItemRegistry.TIMELESS_SLURRY.get());
                 entries.accept(ItemRegistry.MITHRIL_INGOT.get());
@@ -206,13 +207,15 @@ public class CreativeTabRegistry {
                         ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld")), Component.translatable("item.irons_spellbooks.evoker_fort_battle_plans"), false));
                 entries.accept(FurledMapItem.of(IronsSpellbooks.id("mangrove_hut"),
                         ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld")), Component.translatable("item.irons_spellbooks.alchemical_trade_route"), false));
-                entries.accept(FurledMapItem.of(IronsSpellbooks.id("ice_spider_den"),
-                        ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld")), Component.translatable("item.irons_spellbooks.ice_spider_den_map"), false));
-                entries.accept(FurledMapItem.of(IronsSpellbooks.id("citadel"),
-                        ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("the_nether")), Component.translatable("item.irons_spellbooks.citadel_map"), true));
+                entries.accept(ItemRegistry.ICE_SPIDER_FURLED_MAP.get());
+                entries.accept(ItemRegistry.CITADEL_FURLED_MAP.get());
 
                 entries.accept(ItemRegistry.DECREPIT_KEY.get());
                 entries.accept(ItemRegistry.CINDEROUS_SOULCALLER.get());
+
+                entries.accept(ItemRegistry.BONE_KEY.get());
+                entries.accept(ItemRegistry.DEAD_KING_PHYLACTERY.get());
+                entries.accept(ItemRegistry.DEAD_KING_PHYLACTERY_SHARD.get());
 
                 entries.accept(ItemRegistry.BLANK_RUNE.get());
                 entries.accept(ItemRegistry.FIRE_RUNE.get());
@@ -236,10 +239,12 @@ public class CreativeTabRegistry {
                 entries.accept(ItemRegistry.GREATER_EVASION_ELIXIR.get());
                 entries.accept(ItemRegistry.FIRE_ALE.get());
                 entries.accept(ItemRegistry.NETHERWARD_TINCTURE.get());
+                entries.accept(ItemRegistry.TINCTURE_OF_FORGETFULNESS.get());
 
                 entries.accept(ItemRegistry.MUSIC_DISC_DEAD_KING_LULLABY.get());
                 entries.accept(ItemRegistry.MUSIC_DISC_FLAME_STILL_BURNS.get());
                 entries.accept(ItemRegistry.FLAME_STILL_BURNS_FRAGMENT.get());
+                entries.accept(ItemRegistry.MUSIC_DISC_WHISPERS_OF_ICE.get());
 
                 entries.accept(ItemRegistry.KEEPER_SPAWN_EGG.get());
                 entries.accept(ItemRegistry.DEAD_KING_CORPSE_SPAWN_EGG.get());
@@ -284,6 +289,8 @@ public class CreativeTabRegistry {
             event.accept(ItemRegistry.ALCHEMIST_CAULDRON_BLOCK_ITEM.get());
             event.accept(ItemRegistry.FIREFLY_JAR_ITEM.get());
             event.accept(ItemRegistry.PORTAL_FRAME_ITEM.get());
+            event.accept(ItemRegistry.BONE_VAULT_BLOCK_ITEM.get());
+            event.accept(ItemRegistry.CINDEROUS_VAULT_BLOCK_ITEM.get());
         }
 
         if (/*event.getTab() == CreativeModeTabs.searchTab() || */event.getTab() == SCROLLS_TAB.get()) {

@@ -81,5 +81,6 @@ body:
     attributes:
       label: Fabric Check
       options:
-        - label: I understand if I am using Farbic APIs or Connector, this will not be handled
+        - label: I understand if I am using Fabric APIs or Connector, this will not be handled
           required: true
+          

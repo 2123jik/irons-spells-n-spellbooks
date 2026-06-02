@@ -25,6 +25,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
@@ -53,7 +54,7 @@ public class MagicFireball extends AbstractMagicProjectile {
             var x = Mth.lerp(f, d0, this.getX() + vec3.x);
             var y = Mth.lerp(f, d1, this.getY() + vec3.y);
             var z = Mth.lerp(f, d2, this.getZ() + vec3.z);
-            this.level.addParticle(ParticleHelper.FIERY_SMOKE, true,x - random.x, y + getBbHeight() * .5f - random.y, z - random.z, 0,0,0/*motion.x * .5f, motion.y * .5f, motion.z * .5f*/);
+            this.level.addParticle(ParticleHelper.FIERY_SMOKE, true, x - random.x, y + getBbHeight() * .5f - random.y, z - random.z, 0, 0, 0/*motion.x * .5f, motion.y * .5f, motion.z * .5f*/);
         }
     }
 
@@ -73,7 +74,7 @@ public class MagicFireball extends AbstractMagicProjectile {
     }
 
     @Override
-    protected void onHit(HitResult hitResult) {
+    protected void onHit(@NotNull HitResult hitResult) {
         if (!this.level.isClientSide) {
             impactParticles(xOld, yOld, zOld);
             float explosionRadius = getExplosionRadius();
@@ -108,7 +109,7 @@ public class MagicFireball extends AbstractMagicProjectile {
             }
             PacketDistributor.sendToPlayersTrackingEntity(this, new FieryExplosionParticlesPacket(hitResult.getLocation().subtract(getDeltaMovement().scale(0.5)), getExplosionRadius()));
             playSound(SoundEvents.GENERIC_EXPLODE.value(), 4.0F, (1.0F + (this.level.random.nextFloat() - this.level.random.nextFloat()) * 0.2F) * 0.7F);
-            this.discard();
+            this.discardHelper(hitResult);
         }
     }
 }

@@ -2,6 +2,7 @@ package io.redspace.ironsspellbooks.player;
 
 import io.redspace.ironsspellbooks.IronsSpellbooks;
 import io.redspace.ironsspellbooks.api.entity.IMagicEntity;
+import io.redspace.ironsspellbooks.api.entity.IOminousEntity;
 import io.redspace.ironsspellbooks.api.events.SpellTeleportEvent;
 import io.redspace.ironsspellbooks.api.item.UpgradeData;
 import io.redspace.ironsspellbooks.api.magic.MagicData;
@@ -15,12 +16,12 @@ import io.redspace.ironsspellbooks.api.util.CameraShakeManager;
 import io.redspace.ironsspellbooks.api.util.Utils;
 import io.redspace.ironsspellbooks.block.BloodCauldronBlock;
 import io.redspace.ironsspellbooks.block.portal_frame.PortalFrameBlockEntity;
-import io.redspace.ironsspellbooks.capabilities.magic.PocketDimensionManager;
 import io.redspace.ironsspellbooks.capabilities.magic.MagicManager;
+import io.redspace.ironsspellbooks.capabilities.magic.PocketDimensionManager;
 import io.redspace.ironsspellbooks.capabilities.magic.RecastResult;
 import io.redspace.ironsspellbooks.capabilities.magic.SummonManager;
-import io.redspace.ironsspellbooks.capabilities.magic.SyncedSpellData;
 import io.redspace.ironsspellbooks.config.ServerConfigs;
+import io.redspace.ironsspellbooks.damage.DamageSources;
 import io.redspace.ironsspellbooks.damage.ISSDamageTypes;
 import io.redspace.ironsspellbooks.data.IronsDataStorage;
 import io.redspace.ironsspellbooks.datagen.DamageTypeTagGenerator;
@@ -31,10 +32,12 @@ import io.redspace.ironsspellbooks.entity.spells.ice_tomb.IceTombEntity;
 import io.redspace.ironsspellbooks.entity.spells.root.PreventDismount;
 import io.redspace.ironsspellbooks.item.CastingItem;
 import io.redspace.ironsspellbooks.item.Scroll;
-import io.redspace.ironsspellbooks.item.armor.InfernalSorcererArmorItem;
 import io.redspace.ironsspellbooks.network.EquipmentChangedPacket;
 import io.redspace.ironsspellbooks.network.SyncManaPacket;
-import io.redspace.ironsspellbooks.registries.*;
+import io.redspace.ironsspellbooks.registries.BlockRegistry;
+import io.redspace.ironsspellbooks.registries.ComponentRegistry;
+import io.redspace.ironsspellbooks.registries.ItemRegistry;
+import io.redspace.ironsspellbooks.registries.MobEffectRegistry;
 import io.redspace.ironsspellbooks.util.MinecraftInstanceHelper;
 import io.redspace.ironsspellbooks.util.ModTags;
 import io.redspace.ironsspellbooks.util.UpgradeUtils;
@@ -42,19 +45,20 @@ import io.redspace.ironsspellbooks.worldgen.IceSpiderPatrolSpawner;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.cauldron.CauldronInteraction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket;
-import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -75,7 +79,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.EventPriority;
@@ -83,6 +86,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.AnvilUpdateEvent;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityMountEvent;
 import net.neoforged.neoforge.event.entity.EntityTeleportEvent;
 import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
@@ -104,6 +109,8 @@ import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.event.CurioAttributeModifierEvent;
 import top.theillusivec4.curios.api.event.CurioChangeEvent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @EventBusSubscriber
@@ -210,17 +217,6 @@ public class ServerPlayerEvents {
         IronsSpellbooks.OVERWORLD = IronsSpellbooks.MCS.overworld();
     }
 
-    //TODO: 1.21: clean out world upgrader
-//    @SubscribeEvent
-//    public static void onServerAboutToStart(ServerAboutToStartEvent event) {
-//        DataFixerStorage.init(event.getServer().storageSource);
-//
-//        if (ServerConfigs.RUN_WORLD_UPGRADER.get()) {
-//            var server = event.getServer();
-//            new IronsWorldUpgrader(server.storageSource, server.registries()).runUpgrade();
-//        }
-//    }
-
     @SubscribeEvent
     public static void onLivingEquipmentChangeEvent(LivingEquipmentChangeEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
@@ -233,9 +229,9 @@ public class ServerPlayerEvents {
             }
 
             var isFromSpellContainer = ISpellContainer.isSpellContainer(event.getFrom());
-            if (isFromSpellContainer && ISpellContainer.get(event.getFrom()).getIndexForSpell(playerMagicData.getCastingSpell().getSpell()) >= 0) {
-                IronsSpellbooks.LOGGER.debug("onLivingEquipmentChangeEvent from:\n{}\n{}", event.getFrom().toString(), Integer.toHexString(event.getFrom().hashCode()));
-                IronsSpellbooks.LOGGER.debug("onLivingEquipmentChangeEvent to:\n{}\n{}", event.getTo().toString(), Integer.toHexString(event.getTo().hashCode()));
+            if (isFromSpellContainer &&
+                    ISpellContainer.get(event.getFrom()).getIndexForSpell(playerMagicData.getCastingSpell().getSpell()) >= 0 &&
+                    !Utils.isSameItemSameComponentsIgnoreDurability(event.getFrom(), event.getTo())) {
                 if (playerMagicData.isCasting()) {
                     Utils.serverSideCancelCast(serverPlayer);
                 }
@@ -266,8 +262,6 @@ public class ServerPlayerEvents {
         if (event.getEntity().level.isClientSide) {
             return;
         }
-        //Ironsspellbooks.logger.debug("onPlayerOpenContainer {} {}", event.getEntity().getName().getString(), event.getContainer().getType());
-
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             var playerMagicData = MagicData.getPlayerMagicData(serverPlayer);
             if (playerMagicData.isCasting()) {
@@ -456,7 +450,7 @@ public class ServerPlayerEvents {
     public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
         var livingEntity = event.getEntity();
         //irons_spellbooks.LOGGER.debug("onLivingAttack.1: {}", livingEntity);
-        if (event.getSource().getEntity() != null && livingEntity.getVehicle() instanceof IceTombEntity iceTomb) {
+        if (event.getSource().getEntity() != null && livingEntity.getVehicle() instanceof IceTombEntity iceTomb && !DamageSources.isFriendlyFireBetween(event.getSource().getEntity(), livingEntity)) {
             // redirect entity-caused damage away from entombed players into the tomb
             event.setCanceled(true);
             iceTomb.hurt(event.getSource(), event.getOriginalAmount());
@@ -510,9 +504,9 @@ public class ServerPlayerEvents {
         if (event.getSource().is(ISSDamageTypes.FIRE_MAGIC) && event.getSource().getEntity() instanceof LivingEntity livingAttacker) {
             if (livingAttacker.getItemBySlot(EquipmentSlot.CHEST).is(ItemRegistry.INFERNAL_SORCERER_CHESTPLATE) && (!(livingAttacker instanceof Player player) || !player.getCooldowns().isOnCooldown(ItemRegistry.INFERNAL_SORCERER_CHESTPLATE.get()))) {
                 ImmolateEffect.addImmolateStack(livingEntity, livingAttacker);
-                if (livingAttacker instanceof Player player) {
-                    player.getCooldowns().addCooldown(ItemRegistry.INFERNAL_SORCERER_CHESTPLATE.get(), Utils.applyCooldownReduction(InfernalSorcererArmorItem.COOLDOWN_TICKS, player));
-                }
+//                if (livingAttacker instanceof Player player) {
+//                    player.getCooldowns().addCooldown(ItemRegistry.INFERNAL_SORCERER_CHESTPLATE.get(), Utils.applyCooldownReduction(InfernalSorcererArmorItem.COOLDOWN_TICKS, player));
+//                }
             }
         }
     }
@@ -725,6 +719,41 @@ public class ServerPlayerEvents {
         }
     }
 
+    @SubscribeEvent
+    public static void handleOminousEntities(EntityJoinLevelEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel serverLevel) || event.loadedFromDisk()) {
+            return;
+        }
+        var entity = event.getEntity();
+        if (entity instanceof IOminousEntity ominousSettings && !ominousSettings.isOminous() && ominousSettings.canTriggerOminous()) {
+            float rangeSqr = ominousSettings.ominousTriggerRange();
+            rangeSqr *= rangeSqr;
+            Vec3 center = entity.position();
+            List<Player> ominousPlayers = new ArrayList<>();
+            for (Player player : serverLevel.players()) {
+                if (player.isCreative() || player.isSpectator() || player.distanceToSqr(center) > rangeSqr) {
+                    continue;
+                }
+                if (player.hasEffect(MobEffects.TRIAL_OMEN)) {
+                    ominousPlayers.add(player);
+                } else if (player.hasEffect(MobEffects.BAD_OMEN)) {
+                    ominousPlayers.add(player);
+                    MobEffectInstance mobeffectinstance = player.getEffect(MobEffects.BAD_OMEN);
+                    int i = mobeffectinstance.getAmplifier() + 1;
+                    int j = 18000 * i;
+                    player.removeEffect(MobEffects.BAD_OMEN);
+                    player.addEffect(new MobEffectInstance(MobEffects.TRIAL_OMEN, j, 0));
+                    MagicManager.spawnParticles(serverLevel, ParticleTypes.SOUL_FIRE_FLAME, player.getX(), player.getY(0.5), player.getZ(), 25, 0.1, 0.2, 0.1, 0.2, false);
+                    MagicManager.spawnParticles(serverLevel, ParticleTypes.TRIAL_OMEN, player.getX(), player.getY(0.5), player.getZ(), 25, 0.1, 0.2, 0.1, 0.2, false);
+                }
+            }
+            if (!ominousPlayers.isEmpty()) {
+                ominousSettings.onOminousTrigger();
+                serverLevel.playSound(null, BlockPos.containing(center), SoundEvents.TRIAL_SPAWNER_OMINOUS_ACTIVATE, SoundSource.BLOCKS, 4, 1.0F);
+            }
+        }
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onChangeDimensions(EntityTravelToDimensionEvent event) {
         var entity = event.getEntity();
@@ -751,6 +780,17 @@ public class ServerPlayerEvents {
                 } else if (summon != null) {
                     SummonManager.removeSummon(summon);
                 }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onDataLoaded(OnDatapackSyncEvent event) {
+        // tags only bound on data loaded, so we must wait until now to (dynamically) resolve cauldron interactions
+        var map = CauldronInteraction.WATER.map();
+        for (var item : ItemRegistry.getIronsItems()) {
+            if (item.is(ItemTags.DYEABLE)) {
+                map.put(item.get(), CauldronInteraction.DYED_ITEM);
             }
         }
     }

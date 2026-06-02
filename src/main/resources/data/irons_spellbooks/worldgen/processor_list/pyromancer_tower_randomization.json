@@ -1,6 +1,9 @@
 {
   "processors": [
     {
+      "processor_type": "irons_lib:randomize_player_statue"
+    },
+    {
       "processor_type": "minecraft:rule",
       "rules": [
         {
@@ -8,6 +11,19 @@
             "block": "minecraft:decorated_pot",
             "predicate_type": "minecraft:random_block_match",
             "probability": 0.10
+          },
+          "location_predicate": {
+            "predicate_type": "minecraft:always_true"
+          },
+          "output_state": {
+            "Name": "minecraft:air"
+          }
+        },
+        {
+          "input_predicate": {
+            "block": "irons_spellbooks:book_stack",
+            "predicate_type": "minecraft:random_block_match",
+            "probability": 0.20
           },
           "location_predicate": {
             "predicate_type": "minecraft:always_true"
